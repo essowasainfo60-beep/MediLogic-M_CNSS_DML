@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
+        .sidebar .nav-link { color: white; }
+        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
+        .stat-card { border-radius: 15px; transition: transform 0.3s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .btn-wa { background: #25D366; color: white; }
+        .btn-wa:hover { background: #128C7E; color: white; }
+        .btn-loading { opacity: 0.7; pointer-events: none; }
+        .list-group-item { border-radius: 10px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar">
+                <div class="p-3 text-center">
+                    <h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4>
+                    <hr class="bg-light">
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link py-3 px-4 active" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link py-3 px-4" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
+                    <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
+                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
+                    <a class="nav-link py-3 px-4" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                </nav>
+            </div>
+            
+            <!-- Main -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</h1>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-muted" id="horloge"></div>
+                        <div id="userInfo"></div>
+                        <button class="btn btn-danger btn-sm" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="row" id="stats">
+                    <div class="col-md-3 mb-3"><div class="card stat-card bg-primary text-white"><div class="card-body"><h6>👥 Total membres</h6><h2 id="totalMembres">-</h2></div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card stat-card bg-success text-white"><div class="card-body"><h6>✅ Cotisations à jour</h6><h2 id="aJour">-</h2></div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card stat-card bg-warning text-dark"><div class="card-body"><h6>💰 Total collecté</h6><h2 id="totalCollecte">-</h2></div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card stat-card bg-info text-white"><div class="card-body"><h6>🏦 Solde caisse</h6><h2 id="soldeCaisse">-</h2></div></div></div>
+                </div>
+                
+                <!-- Membres en retard -->
+                <div class="card mt-4">
+                    <div class="card-header bg-danger text-white"><i class="fas fa-bell"></i> Membres en retard ⚠️</div>
+                    <div class="card-body" id="retardList"><p class="text-muted">Chargement...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let userRole = '';
+        
+        function afficherUser() {
+            fetch('/api/session')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.logged_in) {
+                        userRole = data.role;
+                        let roleIcon = data.role === 'admin' ? '👑' : '👤';
+                        document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${data.role === 'admin' ? 'Admin' : 'Membre'})`;
+                    }
+                });
+        }
+        
+        function chargerStats() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalMembres').innerText = data.total_membres;
+                    document.getElementById('aJour').innerText = data.a_jour;
+                    document.getElementById('totalCollecte').innerText = data.total_collecte + ' FCFA';
+                    document.getElementById('soldeCaisse').innerText = data.solde_caisse + ' FCFA';
+                });
+        }
+        
+function chargerRetard() {
+    fetch('/api/membres/retard')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            if (data.length === 0) {
+                html = '<div class="alert alert-success">✅ Tous les membres sont à jour !</div>';
+            } else {
+                html = '<div class="list-group">';
+                data.forEach(m => {
+                    let annee = new Date().getFullYear();
+                    let tel = String(m.telephone).replace(/\s/g, '').replace(/^0/, '228').replace('+', '');
+                    let message = `Bonjour ${m.nom}, vous avez ${m.mois_retard} mois de retard (${m.dette_totale} FCFA) pour la cotisation de la Mutuelle d'entraide  CNSS_DML ${annee}. Merci de régulariser.`;
+                    let waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
+                    
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${m.nom}</strong>
+                                    <span class="badge bg-danger ms-2">${m.mois_retard} mois ⏰</span>
+                                    <span class="badge bg-warning ms-2">${m.dette_totale} FCFA</span>
+                                </div>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa btn-sm">
+                                    <i class="fab fa-whatsapp"></i> Rappel WhatsApp
+                                </a>
+                            </div>
+                            <small class="text-muted">Dette totale : ${m.dette_totale} FCFA (${m.mois_retard} mois non payés)</small>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            document.getElementById('retardList').innerHTML = html;
+        })
+        .catch(err => console.error(err));
+}
+        
+        function horloge() { document.getElementById('horloge').innerHTML = new Date().toLocaleString('fr-FR'); }
+        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        
+        afficherUser();
+        chargerStats();
+        chargerRetard();
+        horloge();
+        setInterval(chargerStats, 30000);
+        setInterval(horloge, 1000);
+    </script>
+</body>
+</html>

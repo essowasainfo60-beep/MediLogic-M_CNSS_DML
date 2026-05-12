@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Inscription</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); min-height: 100vh; display: flex; align-items: center; }
+        .card { border-radius: 20px; }
+        .btn-loading { opacity: 0.7; pointer-events: none; }
+        .btn-loading::after { content: ""; position: absolute; width: 16px; height: 16px; top: 50%; right: 15px; margin-top: -8px; border: 2px solid white; border-radius: 50%; border-top-color: transparent; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6"><div class="card"><div class="card-header bg-primary text-white text-center"><h3><i class="fas fa-user-plus"></i> MediLogic-M_CNSS_DML</h3><p>Inscription à la CNSS du Maritime Lacs</p></div>
+            <div class="card-body"><div id="message"></div>
+            <div class="mb-3"><label class="form-label">👤 Nom complet</label><input type="text" id="nom" class="form-control" placeholder="Ex: Jean KOFFI"></div>
+            <div class="mb-3"><label class="form-label">📱 Téléphone (WhatsApp)</label><input type="tel" id="telephone" class="form-control" placeholder="Ex: 90123456"><small class="text-muted">Pour les rappels</small></div>
+            <div class="mb-3"><label class="form-label">💰 Frais d'adhésion</label><input type="text" class="form-control" value="4000 FCFA" disabled><small class="text-muted">Paiement unique à l'inscription</small></div>
+            <div class="mb-3"><label class="form-label">📅 Cotisation mensuelle</label><input type="text" class="form-control" value="1000 FCFA / mois" disabled></div>
+            <button class="btn btn-success w-100" id="btnInscrire" onclick="inscrire()"><i class="fas fa-check-circle"></i> S'inscrire</button>
+            <hr><p class="text-center"><a href="/login">Déjà membre ? Se connecter</a></p></div></div></div>
+        </div>
+    </div>
+    <script>
+        function inscrire() {
+            let btn = document.getElementById('btnInscrire');
+            let nom = document.getElementById('nom').value;
+            let telephone = document.getElementById('telephone').value;
+            if(!nom || !telephone) { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Veuillez remplir tous les champs</div>'; return; }
+            btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '⏳ Inscription en cours...';
+            fetch('/api/inscription', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nom, telephone}) })
+            .then(res => res.json()).then(data => {
+                if(data.success) {
+                    document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Inscription réussie ! Redirection...</div>';
+                    setTimeout(() => window.location.href = '/login', 2000);
+                } else { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = 'S\'inscrire'; }
+            }).catch(() => { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Erreur</div>'; btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = 'S\'inscrire'; });
+        }
+    </script>
+</body>
+</html>

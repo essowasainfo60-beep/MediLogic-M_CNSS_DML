@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Cotisations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
+        .sidebar .nav-link { color: white; }
+        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
+        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
+        .btn-loading::after { content: ""; position: absolute; width: 16px; height: 16px; top: 50%; right: 15px; margin-top: -8px; border: 2px solid white; border-radius: 50%; border-top-color: transparent; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0 sidebar">
+                <div class="p-3 text-center"><h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4><hr class="bg-light"></div>
+                <nav class="nav flex-column">
+                    <a class="nav-link py-3 px-4" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link py-3 px-4" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
+                    <a class="nav-link py-3 px-4 active" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
+                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
+                    <a class="nav-link py-3 px-4" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-money-bill me-2"></i>Enregistrer cotisation</h1>
+                    <div class="d-flex align-items-center gap-3"><div id="userInfo"></div><button class="btn btn-danger btn-sm" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button></div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">💰 Paiement mensuel</div>
+                            <div class="card-body">
+                                <div class="mb-3"><label>Membre</label><select id="membre" class="form-select"><option value="">Chargement...</option></select></div>
+                                <div class="mb-3"><label>Période</label><select id="periode" class="form-select"><option value="1">1 mois (1000 FCFA)</option><option value="3">3 mois (3000 FCFA)</option><option value="6">6 mois (6000 FCFA)</option><option value="12">12 mois (12000 FCFA)</option></select></div>
+                                <div class="mb-3"><label>Mois de départ</label><input type="month" id="moisDebut" class="form-control"></div>
+                                <div class="mb-3"><label>Enregistré par</label><input type="text" id="enregistrePar" class="form-control" placeholder="Votre nom"></div>
+                                <button class="btn btn-success w-100 admin-only" id="btnPayer" onclick="enregistrerPaiement()"><i class="fas fa-save"></i> Enregistrer paiement</button>
+                                <div id="message" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">📊 Récapitulatif</div>
+                            <div class="card-body" id="recap"><p class="text-muted">Sélectionnez un membre</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let userRole = '';
+        let membres = [];
+        
+        function afficherUser() { fetch('/api/session').then(res => res.json()).then(data => { if(data.logged_in) { userRole = data.role; document.getElementById('userInfo').innerHTML = `${data.role === 'admin' ? '👑' : '👤'} ${data.nom}`; if(data.role !== 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none'); } }); }
+        
+        function chargerMembres() { fetch('/api/membres').then(res => res.json()).then(data => { membres = data; let select = document.getElementById('membre'); select.innerHTML = '<option value="">Choisir un membre</option>'; data.forEach(m => { select.innerHTML += `<option value="${m.id}" data-nom="${m.nom}">${m.nom}</option>`; }); }); }
+        
+        document.getElementById('membre').addEventListener('change', function() { let id = this.value; if(id) { fetch(`/api/membre/statut/${id}`).then(res => res.json()).then(data => { let html = `<p><strong>${this.options[this.selectedIndex].text}</strong></p><p>Statut: ${data.actuel === 'À jour' ? '✅ À jour' : '❌ En retard'}</p><p>Mois de retard: ${data.mois_retard || 0}</p>`; document.getElementById('recap').innerHTML = html; }); } else { document.getElementById('recap').innerHTML = '<p class="text-muted">Sélectionnez un membre</p>'; } });
+        
+        function enregistrerPaiement() {
+            let btn = document.getElementById('btnPayer');
+            let idMembre = document.getElementById('membre').value;
+            let periode = parseInt(document.getElementById('periode').value);
+            let moisDebut = document.getElementById('moisDebut').value;
+            let enregistrePar = document.getElementById('enregistrePar').value;
+            if(!idMembre || !moisDebut || !enregistrePar) { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Remplissez tous les champs</div>'; return; }
+            btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '⏳ Enregistrement...';
+            fetch('/api/cotisations', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_membre: parseInt(idMembre), periode: periode, mois_debut: moisDebut, enregistre_par: enregistrePar, montant_unitaire: 1000 }) })
+            .then(res => res.json()).then(data => { if(data.success) { document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Paiement enregistré !</div>'; document.getElementById('membre').value = ''; document.getElementById('moisDebut').value = ''; document.getElementById('enregistrePar').value = ''; } else { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; } btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; }).catch(() => { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Erreur</div>'; btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; });
+        }
+        
+        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        
+        document.getElementById('moisDebut').value = new Date().toISOString().slice(0, 7);
+        afficherUser();
+        chargerMembres();
+    </script>
+</body>
+</html>

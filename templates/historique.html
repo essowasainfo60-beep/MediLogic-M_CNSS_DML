@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Historique</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
+        .sidebar .nav-link { color: white; }
+        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
+        .btn-loading { opacity: 0.7; pointer-events: none; }
+        @media print {
+            .sidebar, .btn, .no-print, .filters, .card-header .btn { display: none !important; }
+            .card { margin: 0; padding: 0; }
+            .container-fluid { padding: 0; margin: 0; }
+            .col-md-10 { width: 100%; margin: 0; padding: 0; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="p-3 text-center"><h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4><hr class="bg-light"></div>
+                <nav class="nav flex-column">
+                    <a class="nav-link py-3 px-4" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link py-3 px-4" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
+                    <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
+                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
+                    <a class="nav-link py-3 px-4 active" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-history me-2"></i>Historique des paiements</h1>
+                    <div class="d-flex align-items-center gap-3 no-print">
+                        <div id="userInfo"></div>
+                        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Imprimer PDF</button>
+                        <button class="btn btn-danger btn-sm" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <span>📜 Toutes les cotisations</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filtres -->
+                        <div class="row mb-3 filters no-print">
+                            <div class="col-md-4">
+                                <input type="text" id="searchNom" class="form-control" placeholder="🔍 Rechercher par nom...">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" id="searchTelephone" class="form-control" placeholder="🔍 Rechercher par téléphone...">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" onclick="resetFiltres()">Reset</button>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-success w-100" onclick="exporterCSV()"><i class="fas fa-file-excel"></i> Export CSV</button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="historiqueTable">
+                                <thead>
+                                    <tr><th>Date</th><th>Membre</th><th>Téléphone</th><th>Période</th><th>Montant</th><th>Enregistré par</th></tr>
+                                </thead>
+                                <tbody id="historique"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let historiqueData = [];
+        
+        function formatDate(dateStr) {
+            if(!dateStr) return '-';
+            let d = new Date(dateStr);
+            return d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        
+        function formatDateTime(dateStr) {
+            if(!dateStr) return '-';
+            let d = new Date(dateStr);
+            return d.toLocaleString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function afficherUser() {
+            fetch('/api/session').then(res => res.json()).then(data => {
+                if(data.logged_in) {
+                    document.getElementById('userInfo').innerHTML = `${data.role === 'admin' ? '👑' : '👤'} ${data.nom}`;
+                }
+            });
+        }
+        
+        function chargerHistorique() {
+            fetch('/api/cotisations/historique')
+                .then(res => res.json())
+                .then(data => {
+                    historiqueData = data;
+                    afficherTableau(data);
+                })
+                .catch(err => console.error(err));
+        }
+        
+        function afficherTableau(data) {
+            let html = '';
+            data.forEach(h => {
+                let periode = '';
+                if(h.mois_debut && h.mois_fin) {
+                    periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)`;
+                } else {
+                    periode = '-';
+                }
+                
+                html += `<tr>
+                    <td>${formatDateTime(h.date_paiement)}</td> <!-- corrigé -->
+                    <td><strong>${h.membre_nom}</strong></td>
+                    <td>${h.telephone || '-'}</td> <!-- corrigé -->
+                    <td>${periode}</td> <!-- corrigé -->
+                    <td class="text-success">${h.montant_total} FCFA</td> <!-- corrigé -->
+                    <td>${h.enregistre_par || '-'}</td> <!-- corrigé -->
+                </tr>`;
+            });
+            document.getElementById('historique').innerHTML = html;
+        }
+        
+        function filtrer() {
+            let nom = document.getElementById('searchNom').value.toLowerCase();
+            let telephone = document.getElementById('searchTelephone').value.toLowerCase();
+            
+            let filtered = historiqueData.filter(h => {
+                let matchNom = !nom || (h.membre_nom && h.membre_nom.toLowerCase().includes(nom));
+                let matchTel = !telephone || (h.telephone && h.telephone.toLowerCase().includes(telephone));
+                return matchNom && matchTel;
+            });
+            
+            afficherTableau(filtered);
+        }
+        
+        function resetFiltres() {
+            document.getElementById('searchNom').value = '';
+            document.getElementById('searchTelephone').value = '';
+            afficherTableau(historiqueData);
+        }
+        
+        function exporterCSV() {
+            let data = historiqueData;
+            let csv = "Date,Membre,Téléphone,Période,Montant,Enregistré par\n";
+            data.forEach(h => {
+                let periode = h.mois_debut ? `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)` : '-';
+                csv += `"${formatDateTime(h.date_paiement)}","${h.membre_nom}","${h.telephone || '-'}","${periode}","${h.montant_total}","${h.enregistre_par || '-'}"\n`;
+            });
+            
+            let blob = new Blob([csv], {type: 'text/csv'});
+            let link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `historique_cotisations_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+        
+        document.getElementById('searchNom').addEventListener('keyup', filtrer);
+        document.getElementById('searchTelephone').addEventListener('keyup', filtrer);
+        
+        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        
+        afficherUser();
+        chargerHistorique();
+    </script>
+</body>
+</html>
