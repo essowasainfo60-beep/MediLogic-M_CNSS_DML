@@ -3,75 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLogic-M_CNSS_DML - Historique</title>
+    <title>MediLogic - Historique des paiements</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; }
-        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
-        .sidebar .nav-link { color: white; }
-        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
-        .btn-loading { opacity: 0.7; pointer-events: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar moderne */
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 1.5rem;
+            margin: 0.3rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            margin-right: 12px;
+        }
+
+        .logo-area {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .logo-area h4 {
+            background: linear-gradient(135deg, #667eea, #fdbb4d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        /* Main content */
+        .main-content {
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e293b, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Stats cards */
+        .stats-row {
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-mini-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            height: 100%;
+        }
+
+        .stat-mini-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-mini-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        .stat-mini-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .stat-mini-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Card */
+        .main-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border: none;
+        }
+
+        /* Filter inputs */
+        .filter-input {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem 1rem;
+            transition: all 0.3s;
+        }
+
+        .filter-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #64748b, #475569);
+            border: none;
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .btn-print {
+            background: rgba(100, 116, 139, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #475569;
+            transform: scale(1.05);
+        }
+
+        /* Table styles */
+        .table-custom {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .table-custom thead th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        .table-custom tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge-cotisation {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+        }
+
+        .badge-adhesion {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background: #f8fafc;
+            border-radius: 15px;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                position: sticky;
+                top: 0;
+            }
+            
+            .page-title {
+                font-size: 1.2rem;
+            }
+            
+            .glass-header {
+                padding: 1rem;
+            }
+            
+            .stat-mini-value {
+                font-size: 1rem;
+            }
+        }
+
+        /* Print styles */
         @media print {
-            .sidebar, .btn, .no-print, .filters, .card-header .btn { display: none !important; }
-            .card { margin: 0; padding: 0; }
-            .container-fluid { padding: 0; margin: 0; }
-            .col-md-10 { width: 100%; margin: 0; padding: 0; }
-            body { background: white; }
+            .sidebar, .btn, .no-print, .filters, .stats-row, .card-header-custom .btn {
+                display: none !important;
+            }
+            
+            .main-card {
+                box-shadow: none;
+                margin: 0;
+            }
+            
+            .table-custom thead {
+                background: #f2f2f2;
+                color: black;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .main-content {
+                padding: 0 !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2 p-0 sidebar no-print">
-                <div class="p-3 text-center"><h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4><hr class="bg-light"></div>
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0 no-print">
+                <div class="logo-area">
+                    <i class="fas fa-shield-alt fa-2x" style="background: linear-gradient(135deg, #667eea, #fdbb4d); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    <h4 class="mt-2">MediLogic</h4>
+                    <small style="color: rgba(255,255,255,0.6);">CNSS Maritime Lacs</small>
+                </div>
                 <nav class="nav flex-column">
-                    <a class="nav-link py-3 px-4" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
-                    <a class="nav-link py-3 px-4" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
-                    <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
-                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
-                    <a class="nav-link py-3 px-4 active" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="/membres">
+                        <i class="fas fa-users"></i> Membres
+                    </a>
+                    <a class="nav-link" href="/cotisations">
+                        <i class="fas fa-money-bill-wave"></i> Cotisations
+                    </a>
+                    <a class="nav-link" href="/caisse">
+                        <i class="fas fa-credit-card"></i> Caisse
+                    </a>
+                    <a class="nav-link active" href="/historique">
+                        <i class="fas fa-history"></i> Historique
+                    </a>
                 </nav>
             </div>
             
-            <div class="col-md-10 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1><i class="fas fa-history me-2"></i>Historique des paiements</h1>
-                    <div class="d-flex align-items-center gap-3 no-print">
-                        <div id="userInfo"></div>
-                        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Imprimer PDF</button>
-                        <button class="btn btn-danger btn-sm" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+            <!-- Main content -->
+            <div class="col-md-10 main-content p-4">
+                <!-- Header -->
+                <div class="glass-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="page-title">
+                                <i class="fas fa-history me-2"></i>Historique des paiements
+                            </h1>
+                            <p class="text-muted mb-0 mt-1">
+                                <i class="fas fa-chart-line me-1"></i>Consultez et gérez l'historique des transactions
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="d-flex justify-content-md-end align-items-center gap-3 no-print">
+                                <div id="userInfo"></div>
+                                <button class="btn btn-print" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>Imprimer
+                                </button>
+                                <button class="btn btn-logout" onclick="deconnexion()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="card">
-                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <span>📜 Toutes les cotisations</span>
+
+                <!-- Mini stats -->
+                <div class="stats-row animate-in">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6">
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-icon" style="background: #e0f2fe; color: #0284c7;">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="stat-mini-value" id="totalTransactions">-</div>
+                                <div class="stat-mini-label">Total transactions</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-icon" style="background: #dcfce7; color: #059669;">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="stat-mini-value" id="totalMontant">-</div>
+                                <div class="stat-mini-label">Montant total</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-icon" style="background: #fef3c7; color: #d97706;">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div class="stat-mini-value" id="periodeCouverture">-</div>
+                                <div class="stat-mini-label">Période couverte</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-icon" style="background: #fee2e2; color: #dc2626;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-mini-value" id="membresUniques">-</div>
+                                <div class="stat-mini-label">Membres uniques</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
+                </div>
+
+                <!-- Historique Table -->
+                <div class="main-card animate-in" style="animation-delay: 0.1s;">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-list me-2"></i>Toutes les transactions</span>
+                        <span class="badge bg-light text-dark" id="transactionCount">0</span>
+                    </div>
+                    <div class="card-body p-4">
                         <!-- Filtres -->
-                        <div class="row mb-3 filters no-print">
+                        <div class="row g-3 mb-4 filters no-print">
                             <div class="col-md-4">
-                                <input type="text" id="searchNom" class="form-control" placeholder="🔍 Rechercher par nom...">
+                                <div class="position-relative">
+                                    <i class="fas fa-user position-absolute" style="left: 12px; top: 12px; color: #94a3b8;"></i>
+                                    <input type="text" id="searchNom" class="form-control filter-input" placeholder="Rechercher par nom" style="padding-left: 38px;">
+                                </div>
                             </div>
                             <div class="col-md-4">
-                                <input type="text" id="searchTelephone" class="form-control" placeholder="🔍 Rechercher par téléphone...">
+                                <div class="position-relative">
+                                    <i class="fas fa-phone position-absolute" style="left: 12px; top: 12px; color: #94a3b8;"></i>
+                                    <input type="text" id="searchTelephone" class="form-control filter-input" placeholder="Rechercher par téléphone" style="padding-left: 38px;">
+                                </div>
                             </div>
                             <div class="col-md-2">
-                                <button class="btn btn-secondary w-100" onclick="resetFiltres()">Reset</button>
+                                <button class="btn-reset w-100" onclick="resetFiltres()">
+                                    <i class="fas fa-undo-alt me-2"></i>Reset
+                                </button>
                             </div>
                             <div class="col-md-2">
-                                <button class="btn btn-success w-100" onclick="exporterCSV()"><i class="fas fa-file-excel"></i> Export CSV</button>
+                                <button class="btn-export w-100" onclick="exporterCSV()">
+                                    <i class="fas fa-file-excel me-2"></i>Export CSV
+                                </button>
                             </div>
                         </div>
                         
                         <div class="table-responsive">
-                            <table class="table table-striped" id="historiqueTable">
+                            <table class="table table-custom mb-0">
                                 <thead>
-                                    <tr><th>Date</th><th>Membre</th><th>Téléphone</th><th>Période</th><th>Montant</th><th>Enregistré par</th></tr>
+                                    <tr>
+                                        <th><i class="far fa-calendar-alt me-1"></i>Date</th>
+                                        <th><i class="fas fa-user me-1"></i>Membre</th>
+                                        <th><i class="fas fa-phone me-1"></i>Téléphone</th>
+                                        <th><i class="fas fa-clock me-1"></i>Période</th>
+                                        <th><i class="fas fa-money-bill me-1"></i>Montant</th>
+                                        <th><i class="fas fa-user-check me-1"></i>Enregistré par</th>
+                                    </tr>
                                 </thead>
-                                <tbody id="historique"></tbody>
+                                <tbody id="historique">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                            <p class="mt-2 text-muted">Chargement des transactions...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -95,129 +558,191 @@
             return d.toLocaleString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
         
-function afficherUser() {
-    fetch('/api/session')
-        .then(res => res.json())
-        .then(data => {
-            if(data.logged_in) {
-                let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '👤') : '👤';
-                let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Admin') : 'Membre';
-                document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${roleText})`;
-                
-                // Cacher le menu Administrateurs si ce n'est pas un super admin
-                if(data.role === 'admin' && !data.is_super_admin) {
-                    let menuAdmins = document.querySelector('a[href="/admins"]');
-                    if(menuAdmins) menuAdmins.style.display = 'none';
-                }
-                
-                // Optionnel : cacher les boutons admin pour les membres
-                if(data.role !== 'admin') {
-                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-                }
-            }
-        });
-}        
-function chargerHistorique() {
-    fetch('/api/cotisations/historique')
-        .then(res => res.json())
-        .then(data => {
-            historiqueData = data;  // ← AJOUTE CETTE LIGNE
-            let html = '';
-            data.forEach(h => {
-                let typeHtml = h.type_paiement === 'adhesion' ? 
-                    '<span class="badge bg-info ms-2">💰 Adhésion</span>' : 
-                    '<span class="badge bg-success ms-2">📆 Cotisation</span>';
-                
-                let periode = '';
-                if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
-                    periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)`;
-                } else if(h.type_paiement === 'adhesion') {
-                    periode = 'Paiement unique (adhésion)';
+        function updateStats(data) {
+            // Total transactions
+            document.getElementById('totalTransactions').innerText = data.length;
+            document.getElementById('transactionCount').innerText = data.length;
+            
+            // Montant total
+            let totalMontant = data.reduce((sum, h) => sum + h.montant, 0);
+            document.getElementById('totalMontant').innerHTML = totalMontant.toLocaleString() + ' <small style="font-size:0.7rem;">FCFA</small>';
+            
+            // Membres uniques
+            let membresUniques = new Set(data.map(h => h.membre_nom)).size;
+            document.getElementById('membresUniques').innerText = membresUniques;
+            
+            // Période couverte
+            if (data.length > 0) {
+                let dates = data.map(h => new Date(h.date_paiement)).filter(d => !isNaN(d));
+                if (dates.length > 0) {
+                    let minDate = new Date(Math.min(...dates));
+                    let maxDate = new Date(Math.max(...dates));
+                    document.getElementById('periodeCouverture').innerHTML = 
+                        `${minDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - ${maxDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`;
                 } else {
-                    periode = '-';
+                    document.getElementById('periodeCouverture').innerText = '-';
                 }
-                
-                html += `<tr>
-                    <td>${formatDateTime(h.date_paiement)}</td class="text-success">
-                    <td><strong>${h.membre_nom}</strong>${typeHtml}</td class="text-success">
-                    <td>${h.telephone || '-'}</td class="text-success">
-                    <td>${periode}</td class="text-success">
-                    <td class="text-success">${h.montant} FCFA</td class="text-success">
-                    <td>${h.enregistre_par || '-'}</td class="text-success">
-                </tr>`;
-            });
-            document.getElementById('historique').innerHTML = html;
-        });
-} 
-       
-function afficherTableau(data) {
-    let html = '';
-    data.forEach(h => {
-        let typeHtml = h.type_paiement === 'adhesion' ? 
-            '<span class="badge bg-info ms-2">💰 Adhésion</span>' : 
-            '<span class="badge bg-success ms-2">📆 Cotisation</span>';
-        
-        let periode = '';
-        if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
-            periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)`;
-        } else if(h.type_paiement === 'adhesion') {
-            periode = 'Paiement unique (adhésion)';
-        } else {
-            periode = '-';
+            } else {
+                document.getElementById('periodeCouverture').innerText = '-';
+            }
         }
         
-        html += `<tr>
-            <td>${formatDateTime(h.date_paiement)}</td class="text-success">
-            <td><strong>${h.membre_nom}</strong>${typeHtml}</td class="text-success">
-            <td>${h.telephone || '-'}</td class="text-success">
-            <td>${periode}</td class="text-success">
-            <td class="text-success">${h.montant} FCFA</td class="text-success">
-            <td>${h.enregistre_par || '-'}</td class="text-success">
-        </tr>`;
-    });
-    document.getElementById('historique').innerHTML = html;
-}
-
-function filtrer() {
-    let nom = document.getElementById('searchNom').value.toLowerCase();
-    let telephone = document.getElementById('searchTelephone').value.toLowerCase();
-    
-    let filtered = historiqueData.filter(h => {
-        let matchNom = !nom || (h.membre_nom && h.membre_nom.toLowerCase().includes(nom));
-        let matchTel = !telephone || (h.telephone && h.telephone.toLowerCase().includes(telephone));
-        return matchNom && matchTel;
-    });
-    
-    afficherTableau(filtered);
-}
-
+        function afficherUser() {
+            fetch('/api/session')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.logged_in) {
+                        let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '⭐') : '👤';
+                        let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Administrateur') : 'Membre';
+                        let bgColor = data.is_super_admin ? '#f59e0b' : '#3b82f6';
+                        document.getElementById('userInfo').innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <div style="width: 36px; height: 36px; background: ${bgColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px;">
+                                    ${roleIcon}
+                                </div>
+                                <div class="text-start">
+                                    <div class="fw-bold">${data.nom}</div>
+                                    <small class="text-muted">${roleText}</small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        if(data.role !== 'admin') {
+                            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                        }
+                    }
+                });
+        }
+        
+        function chargerHistorique() {
+            fetch('/api/cotisations/historique')
+                .then(res => res.json())
+                .then(data => {
+                    historiqueData = data;
+                    updateStats(data);
+                    afficherTableau(data);
+                })
+                .catch(err => {
+                    console.error('Erreur:', err);
+                    document.getElementById('historique').innerHTML = `
+                        <tr><td colspan="6" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                <p class="mb-0 text-danger">Erreur de chargement des données</p>
+                            </div>
+                         </td></tr>
+                    `;
+                });
+        }
+        
+        function afficherTableau(data) {
+            let html = '';
+            if (data.length === 0) {
+                html = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p class="mb-0 text-muted">Aucune transaction trouvée</p>
+                                <small>Ajustez vos filtres pour voir plus de résultats</small>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                data.forEach((h, index) => {
+                    let typeBadge = h.type_paiement === 'adhesion' ? 
+                        '<span class="badge-adhesion"><i class="fas fa-hand-holding-usd me-1"></i>Adhésion</span>' : 
+                        '<span class="badge-cotisation"><i class="fas fa-calendar-check me-1"></i>Cotisation</span>';
+                    
+                    let periode = '';
+                    if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
+                        let debut = new Date(h.mois_debut);
+                        let fin = new Date(h.mois_fin);
+                        periode = `${debut.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - ${fin.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} <span class="text-muted">(${h.nombre_mois} mois)</span>`;
+                    } else if(h.type_paiement === 'adhesion') {
+                        periode = '<span class="text-muted">Paiement unique d\'adhésion</span>';
+                    } else {
+                        periode = '-';
+                    }
+                    
+                    html += `
+                        <tr style="animation: fadeInUp 0.3s ease-out ${index * 0.02}s forwards; opacity: 0;">
+                            <td class="text-nowrap">
+                                <i class="far fa-clock me-1 text-muted"></i>${formatDateTime(h.date_paiement)}
+                            </td>
+                            <td>
+                                <strong>${h.membre_nom}</strong><br>
+                                ${typeBadge}
+                            </td>
+                            <td>${h.telephone || '-'}</td>
+                            <td>${periode}</td>
+                            <td class="fw-bold text-success">${h.montant.toLocaleString()} FCFA</td>
+                            <td><i class="fas fa-user-check me-1 text-muted"></i>${h.enregistre_par || '-'}</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('historique').innerHTML = html;
+        }
+        
+        function filtrer() {
+            let nom = document.getElementById('searchNom').value.toLowerCase().trim();
+            let telephone = document.getElementById('searchTelephone').value.toLowerCase().trim();
+            
+            let filtered = historiqueData.filter(h => {
+                let matchNom = !nom || (h.membre_nom && h.membre_nom.toLowerCase().includes(nom));
+                let matchTel = !telephone || (h.telephone && h.telephone.toLowerCase().includes(telephone));
+                return matchNom && matchTel;
+            });
+            
+            updateStats(filtered);
+            afficherTableau(filtered);
+        }
         
         function resetFiltres() {
             document.getElementById('searchNom').value = '';
             document.getElementById('searchTelephone').value = '';
+            updateStats(historiqueData);
             afficherTableau(historiqueData);
         }
         
         function exporterCSV() {
             let data = historiqueData;
-            let csv = "Date,Membre,Téléphone,Période,Montant,Enregistré par\n";
+            let csv = "Date,Membre,Téléphone,Type,Période,Moist couverts,Montant,Enregistré par\n";
             data.forEach(h => {
-                let periode = h.mois_debut ? `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)` : '-';
-                csv += `"${formatDateTime(h.date_paiement)}","${h.membre_nom}","${h.telephone || '-'}","${periode}","${h.montant_total}","${h.enregistre_par || '-'}"\n`;
+                let periode = '';
+                let moisCouverts = '';
+                if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
+                    periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)}`;
+                    moisCouverts = h.nombre_mois;
+                } else if(h.type_paiement === 'adhesion') {
+                    periode = 'Adhésion';
+                    moisCouverts = '-';
+                }
+                let type = h.type_paiement === 'adhesion' ? 'Adhésion' : 'Cotisation';
+                csv += `"${formatDateTime(h.date_paiement)}","${h.membre_nom}","${h.telephone || '-'}","${type}","${periode}","${moisCouverts}","${h.montant}","${h.enregistre_par || '-'}"\n`;
             });
             
-            let blob = new Blob([csv], {type: 'text/csv'});
+            let blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});
             let link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `historique_cotisations_${new Date().toISOString().slice(0,10)}.csv`;
+            let url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', `historique_paiements_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
         
         document.getElementById('searchNom').addEventListener('keyup', filtrer);
         document.getElementById('searchTelephone').addEventListener('keyup', filtrer);
         
-        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        function deconnexion() { 
+            fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); 
+        }
         
+        // Initialisation
         afficherUser();
         chargerHistorique();
     </script>

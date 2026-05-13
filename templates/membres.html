@@ -3,91 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLogic-M_CNSS_DML - Membres</title>
+    <title>MediLogic - Gestion des Membres</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; }
-        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
-        .sidebar .nav-link { color: white; }
-        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
-        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
-        .btn-loading::after { content: ""; position: absolute; width: 16px; height: 16px; top: 50%; right: 15px; margin-top: -8px; border: 2px solid white; border-radius: 50%; border-top-color: transparent; animation: spin 0.6s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar moderne */
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 1.5rem;
+            margin: 0.3rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            margin-right: 12px;
+        }
+
+        .logo-area {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .logo-area h4 {
+            background: linear-gradient(135deg, #667eea, #fdbb4d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        /* Main content */
+        .main-content {
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e293b, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Form Card */
+        .form-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border: none;
+        }
+
+        .card-header-custom i {
+            margin-right: 10px;
+        }
+
+        /* Table Card */
+        .table-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        /* Form inputs */
+        .form-control-modern {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 0.7rem 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control-modern:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 12px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            border-radius: 10px;
+            padding: 0.4rem 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-danger-custom:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-warning-custom {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            border-radius: 10px;
+            padding: 0.3rem 0.8rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-warning-custom:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-outline-custom {
+            border-radius: 10px;
+            padding: 0.3rem 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-outline-custom:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .btn-print {
+            background: rgba(100, 116, 139, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #475569;
+            transform: scale(1.05);
+        }
+
+        /* Table styles */
+        .table-custom {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .table-custom thead th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8f9ff;
+            transform: scale(1.01);
+        }
+
+        .table-custom tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge-success-custom {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+        }
+
+        .badge-danger-custom {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+        }
+
+        .badge-warning-custom {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+        }
+
+        /* Loading state */
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
         
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            right: 15px;
+            margin-top: -8px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert messages */
+        .alert-custom {
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                position: sticky;
+                top: 0;
+            }
+            
+            .page-title {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Print styles */
         @media print {
-            .sidebar, .btn, .no-print, .card-header .btn, .admin-only, #message, .btn-danger, .btn-warning, .btn-success {
+            .sidebar, .btn, .no-print, .form-card, .btn-print, .btn-logout {
                 display: none !important;
             }
-            .card { margin: 0; padding: 0; border: none; box-shadow: none; }
-            .card-header { background: white !important; color: black !important; border-bottom: 2px solid #000; }
-            .container-fluid { padding: 0; margin: 0; }
-            .col-md-10 { width: 100%; margin: 0; padding: 0; }
-            body { background: white; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; }
-            th { background: #f2f2f2; }
+            
+            .table-card {
+                box-shadow: none;
+                margin: 0;
+            }
+            
+            .table-custom thead {
+                background: #f2f2f2;
+                color: black;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .main-content {
+                padding: 0 !important;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2 p-0 sidebar">
-                <div class="p-3 text-center"><h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4><hr class="bg-light"></div>
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="logo-area">
+                    <i class="fas fa-shield-alt fa-2x" style="background: linear-gradient(135deg, #667eea, #fdbb4d); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    <h4 class="mt-2">MediLogic</h4>
+                    <small style="color: rgba(255,255,255,0.6);">CNSS Maritime Lacs</small>
+                </div>
                 <nav class="nav flex-column">
-                    <a class="nav-link py-3 px-4" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
-                    <a class="nav-link py-3 px-4 active" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
-                    <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
-                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
-                    <a class="nav-link py-3 px-4" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a class="nav-link active" href="/membres">
+                        <i class="fas fa-users"></i> Membres
+                    </a>
+                    <a class="nav-link" href="/cotisations">
+                        <i class="fas fa-money-bill-wave"></i> Cotisations
+                    </a>
+                    <a class="nav-link" href="/caisse">
+                        <i class="fas fa-credit-card"></i> Caisse
+                    </a>
+                    <a class="nav-link" href="/historique">
+                        <i class="fas fa-history"></i> Historique
+                    </a>
                 </nav>
             </div>
             
-            <div class="col-md-10 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1><i class="fas fa-users me-2"></i>Gestion des membres</h1>
-                    <div class="d-flex align-items-center gap-3">
-                        <div id="userInfo"></div>
-                        <button class="btn btn-primary btn-sm no-print" onclick="window.print()"><i class="fas fa-print"></i> Imprimer PDF</button>
-                        <button class="btn btn-danger btn-sm no-print" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+            <!-- Main content -->
+            <div class="col-md-10 main-content p-4">
+                <!-- Header -->
+                <div class="glass-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="page-title">
+                                <i class="fas fa-users me-2"></i>Gestion des membres
+                            </h1>
+                            <p class="text-muted mb-0 mt-1">
+                                <i class="fas fa-user-plus me-1"></i>Ajoutez, modifiez et gérez tous les membres
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="d-flex justify-content-md-end align-items-center gap-3">
+                                <div id="userInfo"></div>
+                                <button class="btn btn-print no-print" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>Imprimer
+                                </button>
+                                <button class="btn btn-logout no-print" onclick="deconnexion()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Formulaire ajout -->
-                <div class="card mb-4 no-print">
-                    <div class="card-header bg-primary text-white">➕ Ajouter un membre</div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 mb-2"><input type="text" id="nom" class="form-control" placeholder="Nom complet"></div>
-                            <div class="col-md-2 mb-2"><input type="tel" id="telephone" class="form-control" placeholder="Téléphone"></div>
-                            <div class="col-md-2 mb-2"><input type="number" id="fraisAdhesion" class="form-control" placeholder="Adhésion" value="4000"></div>
-                            <div class="col-md-3 mb-2"><input type="date" id="dateInscription" class="form-control" value="2026-01-01"></div>
-                            <div class="col-md-2 mb-2"><button class="btn btn-success w-100 admin-only" id="btnAjouter" onclick="ajouterMembre()"><i class="fas fa-save"></i> Ajouter</button></div>
+                <!-- Formulaire ajout membre -->
+                <div class="form-card no-print">
+                    <div class="card-header-custom">
+                        <i class="fas fa-user-plus"></i> Ajouter un nouveau membre
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Nom complet</label>
+                                <input type="text" id="nom" class="form-control form-control-modern" placeholder="Jean Dupont">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Téléphone</label>
+                                <input type="tel" id="telephone" class="form-control form-control-modern" placeholder="+228 XX XX XX XX">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Frais d'adhésion</label>
+                                <input type="number" id="fraisAdhesion" class="form-control form-control-modern" value="4000">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Date d'inscription</label>
+                                <input type="date" id="dateInscription" class="form-control form-control-modern" value="2026-01-01">
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button class="btn btn-primary-custom admin-only" id="btnAjouter" onclick="ajouterMembre()">
+                                    <i class="fas fa-save me-2"></i>Enregistrer le membre
+                                </button>
+                            </div>
                         </div>
-                        <div id="message" class="mt-2"></div>
+                        <div id="message" class="mt-3"></div>
                     </div>
                 </div>
                 
                 <!-- Liste des membres -->
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">📋 Liste des membres</div>
-                    <div class="card-body">
+                <div class="table-card">
+                    <div class="card-header-custom" style="background: linear-gradient(135deg, #64748b, #475569);">
+                        <i class="fas fa-list"></i> Liste des membres inscrits
+                        <span class="badge bg-light text-dark ms-2" id="membreCount">0</span>
+                    </div>
+                    <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-striped">
+                            <table class="table table-custom mb-0">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nom</th>
+                                        <th>#</th>
+                                        <th>Nom complet</th>
                                         <th>Téléphone</th>
-                                        <th>Date inscription</th>
+                                        <th>Date d'inscription</th>
                                         <th>Adhésion</th>
-                                        <th>Statut</th>
-                                        <th class="no-print">Action</th>
+                                        <th>Statut cotisation</th>
+                                        <th class="no-print">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="listeMembres"></tbody>
-                            </table>
+                                <tbody id="listeMembres">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                            <p class="mt-2 text-muted">Chargement des membres...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                             </table>
                         </div>
                     </div>
                 </div>
@@ -99,73 +532,119 @@
         let userRole = '';
         
         function afficherUser() {
-            fetch('/api/session').then(res => res.json()).then(data => {
-                if(data.logged_in) {
-                    userRole = data.role;
-                    let roleIcon = data.role === 'admin' ? '👑' : '👤';
-                    document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${data.role === 'admin' ? 'Admin' : 'Membre'})`;
-                    if(data.role !== 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-                }
-            });
+            fetch('/api/session')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.logged_in) {
+                        userRole = data.role;
+                        let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '⭐') : '👤';
+                        let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Administrateur') : 'Membre';
+                        let bgColor = data.is_super_admin ? '#f59e0b' : '#3b82f6';
+                        document.getElementById('userInfo').innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <div style="width: 36px; height: 36px; background: ${bgColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px;">
+                                    ${roleIcon}
+                                </div>
+                                <div class="text-start">
+                                    <div class="fw-bold">${data.nom}</div>
+                                    <small class="text-muted">${roleText}</small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        if(data.role !== 'admin') {
+                            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                        }
+                    }
+                });
         }
         
         function chargerMembres() {
             fetch('/api/membres')
                 .then(res => res.json())
                 .then(data => {
+                    document.getElementById('membreCount').innerText = data.length;
                     let html = '';
-                    data.forEach(m => {
-                        let dateInscription = m.date_inscription ? new Date(m.date_inscription).toLocaleDateString('fr-FR') : '-';
+                    data.forEach((m, index) => {
+                        let dateInscription = m.date_inscription ? new Date(m.date_inscription).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
                         
                         let adhesionHtml = '';
                         if(m.adhesion_statut === 'payé') {
-                            adhesionHtml = '<span class="text-success">✅ Payé</span>';
+                            adhesionHtml = '<span class="badge-success-custom"><i class="fas fa-check-circle me-1"></i>Payé</span>';
                         } else if(m.adhesion_statut === 'partiel') {
-                            adhesionHtml = `<span class="text-warning">🟡 Partiel (${m.frais_adhesion_paye}/4000)</span>
-                                            <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer</button>`;
+                            adhesionHtml = `
+                                <span class="badge-warning-custom"><i class="fas fa-chart-simple me-1"></i>Partiel (${m.frais_adhesion_paye}/4000)</span>
+                                <button class="btn btn-warning-custom btn-sm mt-1 no-print" onclick="payerAdhesion(${m.id})">
+                                    <i class="fas fa-credit-card me-1"></i>Payer reste
+                                </button>
+                            `;
                         } else {
-                            adhesionHtml = `<span class="text-danger">❌ Impayé</span>
-                                            <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer</button>`;
+                            adhesionHtml = `
+                                <span class="badge-danger-custom"><i class="fas fa-times-circle me-1"></i>Impayé</span>
+                                <button class="btn btn-warning-custom btn-sm mt-1 no-print" onclick="payerAdhesion(${m.id})">
+                                    <i class="fas fa-credit-card me-1"></i>Payer
+                                </button>
+                            `;
                         }
                         
-                        html += `<tr>
-                            <td>${m.id}</td>
-                            <td>${m.nom}</td>
-                            <td>${m.telephone}</td>
-                            <td>${dateInscription}
-                                <button class="btn btn-sm btn-outline-secondary ms-2 no-print" onclick="modifierDateMembre(${m.id})" title="Modifier date">
+                        html += `<tr class="animate-in" style="animation-delay: ${index * 0.02}s">
+                            <td class="fw-semibold">${m.id}</td>
+                            <td><i class="fas fa-user-circle me-2 text-primary"></i><strong>${m.nom}</strong></td>
+                            <td><i class="fas fa-phone me-2 text-muted"></i>${m.telephone}</td>
+                            <td>
+                                ${dateInscription}
+                                <button class="btn btn-outline-custom btn-sm ms-2 no-print" onclick="modifierDateMembre(${m.id})" title="Modifier date">
                                     <i class="fas fa-calendar-alt"></i>
                                 </button>
-                            </td class="text-success">
-                            <td id="adhesion-${m.id}">${adhesionHtml}</td class="text-success">
-                            <td id="statut-${m.id}">Chargement...</td class="text-success">
-                            ${userRole === 'admin' ? `<td class="no-print"><button class="btn btn-danger btn-sm admin-only" onclick="supprimerMembre(${m.id})"><i class="fas fa-trash"></i></button></td>` : '<td class="no-print"></td>'}
+                            </td>
+                            <td id="adhesion-${m.id}">${adhesionHtml}</td>
+                            <td id="statut-${m.id}"><span class="text-muted">Chargement...</span></td>
+                            <td class="no-print">
+                                ${userRole === 'admin' ? `
+                                    <button class="btn btn-danger-custom btn-sm" onclick="supprimerMembre(${m.id})" title="Supprimer">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : '<span class="text-muted">-</span>'}
+                            </td>
                         </tr>`;
                         
+                        // Charger statut individuellement
                         fetch(`/api/membre/statut/${m.id}`).then(res => res.json()).then(statut => {
-                            let statutHtml = statut.actuel === 'À jour' ? '<span class="text-success">✅ À jour</span>' : `<span class="text-danger">❌ En retard (${statut.mois_retard} mois)</span>`;
+                            let statutHtml = statut.actuel === 'À jour' ? 
+                                '<span class="badge-success-custom"><i class="fas fa-check-circle me-1"></i>À jour</span>' : 
+                                `<span class="badge-danger-custom"><i class="fas fa-clock me-1"></i>${statut.mois_retard} mois retard</span>`;
                             document.getElementById(`statut-${m.id}`).innerHTML = statutHtml;
+                        }).catch(() => {
+                            document.getElementById(`statut-${m.id}`).innerHTML = '<span class="text-danger">Erreur</span>';
                         });
                     });
                     document.getElementById('listeMembres').innerHTML = html;
+                })
+                .catch(() => {
+                    document.getElementById('listeMembres').innerHTML = `
+                        <tr><td colspan="7" class="text-center py-4 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                            Erreur de chargement des données
+                        </td></tr>
+                    `;
                 });
         }
         
         function ajouterMembre() {
             let btn = document.getElementById('btnAjouter');
-            let nom = document.getElementById('nom').value;
-            let telephone = document.getElementById('telephone').value;
+            let nom = document.getElementById('nom').value.trim();
+            let telephone = document.getElementById('telephone').value.trim();
             let fraisAdhesion = document.getElementById('fraisAdhesion').value;
             let dateInscription = document.getElementById('dateInscription').value;
             
             if(!nom || !telephone) { 
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">Remplissez tous les champs</div>'; 
+                showMessage('danger', 'Veuillez remplir tous les champs obligatoires');
                 return; 
             }
             
             btn.disabled = true; 
             btn.classList.add('btn-loading'); 
-            btn.innerHTML = '⏳ Enregistrement...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
             
             fetch('/api/membres', { 
                 method: 'POST', 
@@ -180,26 +659,34 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) { 
-                    document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Membre ajouté !</div>'; 
+                    showMessage('success', '✅ Membre ajouté avec succès !');
                     document.getElementById('nom').value = ''; 
                     document.getElementById('telephone').value = ''; 
                     chargerMembres(); 
                 } else { 
-                    document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; 
+                    showMessage('danger', '❌ ' + data.message);
                 }
                 btn.disabled = false; 
                 btn.classList.remove('btn-loading'); 
-                btn.innerHTML = '<i class="fas fa-save"></i> Ajouter';
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Enregistrer le membre';
             }).catch(() => { 
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">Erreur</div>'; 
+                showMessage('danger', 'Erreur lors de l\'enregistrement');
                 btn.disabled = false; 
                 btn.classList.remove('btn-loading'); 
-                btn.innerHTML = '<i class="fas fa-save"></i> Ajouter';
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Enregistrer le membre';
             });
         }
         
+        function showMessage(type, text) {
+            let msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = `<div class="alert alert-${type} alert-custom">${text}</div>`;
+            setTimeout(() => {
+                msgDiv.innerHTML = '';
+            }, 5000);
+        }
+        
         function payerAdhesion(id) {
-            let montant = prompt("Montant à payer pour l'adhésion:", "4000");
+            let montant = prompt("Montant à payer pour l'adhésion (reste à payer) :", "4000");
             if(montant && !isNaN(montant) && parseInt(montant) > 0) {
                 fetch('/api/payer_adhesion', {
                     method: 'POST',
@@ -219,7 +706,7 @@
         }
         
         function modifierDateMembre(id) {
-            let nouvelleDate = prompt("Entrez la nouvelle date d'inscription (YYYY-MM-DD):", "2026-01-01");
+            let nouvelleDate = prompt("Entrez la nouvelle date d'inscription (YYYY-MM-DD):\nExemple: 2026-01-15", "2026-01-01");
             if(nouvelleDate && nouvelleDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 fetch(`/api/membres/${id}/date`, {
                     method: 'PUT',
@@ -229,7 +716,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) {
-                        alert('✅ Date modifiée !');
+                        alert('✅ Date modifiée avec succès !');
                         chargerMembres();
                     } else {
                         alert('❌ ' + data.message);
@@ -241,8 +728,12 @@
         }
         
         function supprimerMembre(id) { 
-            if(confirm('Supprimer ce membre ?')) { 
-                fetch(`/api/membres/${id}`, {method: 'DELETE'}).then(() => chargerMembres()); 
+            if(confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce membre ?\nCette action est irréversible.')) { 
+                fetch(`/api/membres/${id}`, {method: 'DELETE'})
+                    .then(() => {
+                        chargerMembres();
+                        showMessage('success', 'Membre supprimé avec succès');
+                    });
             } 
         }
         
@@ -250,6 +741,7 @@
             fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); 
         }
         
+        // Initialisation
         afficherUser();
         chargerMembres();
     </script>
