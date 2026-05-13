@@ -3,96 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLogic-M_CNSS_DML - Inscription</title>
+    <title>MediLogic - Inscription</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <style>
-        body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); min-height: 100vh; display: flex; align-items: center; }
-        .card { border-radius: 20px; }
-        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
-        .btn-loading::after { content: ""; position: absolute; width: 16px; height: 16px; top: 50%; right: 15px; margin-top: -8px; border: 2px solid white; border-radius: 50%; border-top-color: transparent; animation: spin 0.6s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Effet de particules animées */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 1%, transparent 1%);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+        }
+
+        @keyframes moveBackground {
+            from { transform: translateY(0px); }
+            to { transform: translateY(50px); }
+        }
+
+        /* Carte principale */
+        .register-card {
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            width: 100%;
+            max-width: 580px;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .register-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Header */
+        .card-header-custom {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border-bottom: none;
+        }
+
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea, #fdbb4d);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header-custom h3 {
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-header-custom p {
+            opacity: 0.8;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* Formulaires */
+        .form-container {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .form-label i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+
+        .input-group-custom {
+            position: relative;
+        }
+
+        .input-group-custom i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            z-index: 1;
+        }
+
+        .form-control-modern {
+            width: 100%;
+            padding: 0.85rem 1rem 0.85rem 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control-modern:disabled {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        /* Champs statiques */
+        .static-field {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 0.85rem 1rem;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* Boutons */
+        .btn-register {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-register:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-register:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Loading state */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            top: 50%;
+            right: 20px;
+            margin-top: -9px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert messages */
+        .alert-custom {
+            border-radius: 16px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-custom i {
+            font-size: 1.2rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Lien connexion */
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        .card-footer-custom {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Info box */
+        .info-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .info-box-title {
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box-text {
+            font-size: 0.8rem;
+            color: #166534;
+            margin: 0;
+        }
+
+        /* Animation d'entrée */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        /* Password strength indicator */
+        .password-strength {
+            margin-top: 0.5rem;
+            height: 4px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .strength-text {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white text-center">
-                        <h3><i class="fas fa-user-plus"></i> MediLogic-M_CNSS_DML</h3>
-                        <p>Inscription à la CNSS du Maritime Lacs</p>
+    <div class="register-card animate-in">
+        <div class="card-header-custom">
+            <div class="logo-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h3>MediLogic</h3>
+            <p>CNSS du Maritime Lacs - Devenez membre</p>
+        </div>
+        
+        <div class="form-container">
+            <!-- Message d'alerte -->
+            <div id="message"></div>
+
+            <!-- Info box -->
+            <div class="info-box">
+                <div class="info-box-title">
+                    <i class="fas fa-info-circle me-1"></i> À savoir
+                </div>
+                <p class="info-box-text">
+                    L'adhésion est de <strong>4 000 FCFA</strong> (paiement unique)<br>
+                    La cotisation mensuelle est de <strong>1 000 FCFA</strong>
+                </p>
+            </div>
+
+            <!-- Formulaire -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-user"></i> Nom complet
+                </label>
+                <div class="input-group-custom">
+                    <i class="fas fa-id-card"></i>
+                    <input type="text" id="nom" class="form-control-modern" placeholder="Ex: Jean KOFFI">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fab fa-whatsapp"></i> Téléphone (WhatsApp)
+                </label>
+                <div class="input-group-custom">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" id="telephone" class="form-control-modern" placeholder="Ex: 90123456">
+                </div>
+                <small class="text-muted" style="font-size: 0.7rem;">Format: 90123456 (8 à 9 chiffres)</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-lock"></i> Mot de passe
+                </label>
+                <div class="input-group-custom">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="motDePasse" class="form-control-modern" placeholder="Minimum 4 caractères">
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar" id="strengthBar"></div>
+                </div>
+                <div class="strength-text" id="strengthText"></div>
+                <small class="text-muted">Choisissez un mot de passe sécurisé</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-calendar-alt"></i> Date d'adhésion
+                </label>
+                <div class="input-group-custom">
+                    <i class="fas fa-calendar-check"></i>
+                    <input type="date" id="dateAdhesion" class="form-control-modern" value="2026-01-01">
+                </div>
+                <small class="text-muted">Date depuis laquelle vous êtes membre</small>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <label class="form-label">
+                        <i class="fas fa-hand-holding-usd"></i> Frais d'adhésion
+                    </label>
+                    <div class="static-field">
+                        <i class="fas fa-money-bill-wave me-2 text-success"></i> 4 000 FCFA
                     </div>
-                    <div class="card-body">
-                        <div id="message"></div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">👤 Nom complet</label>
-                            <input type="text" id="nom" class="form-control" placeholder="Ex: Jean KOFFI">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">📱 Téléphone (WhatsApp)</label>
-                            <input type="tel" id="telephone" class="form-control" placeholder="Ex: 90123456">
-                            <small class="text-muted">Pour les rappels</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">🔒 Mot de passe</label>
-                            <input type="password" id="motDePasse" class="form-control" placeholder="Minimum 4 caractères">
-                            <small class="text-muted">Choisissez un mot de passe sécurisé</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">📅 Date d'adhésion</label>
-                            <input type="date" id="dateAdhesion" class="form-control" value="2026-01-01">
-                            <small class="text-muted">Date depuis laquelle vous êtes membre</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">💰 Frais d'adhésion</label>
-                            <input type="text" class="form-control" value="4000 FCFA" disabled>
-                            <small class="text-muted">Paiement unique à l'inscription</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">📅 Cotisation mensuelle</label>
-                            <input type="text" class="form-control" value="1000 FCFA / mois" disabled>
-                        </div>
-                        
-                        <button class="btn btn-success w-100" id="btnInscrire" onclick="inscrire()">
-                            <i class="fas fa-check-circle"></i> S'inscrire
-                        </button>
-                        
-                        <hr>
-                        <p class="text-center"><a href="/login">Déjà membre ? Se connecter</a></p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-week"></i> Cotisation mensuelle
+                    </label>
+                    <div class="static-field">
+                        <i class="fas fa-chart-line me-2 text-primary"></i> 1 000 FCFA / mois
                     </div>
                 </div>
             </div>
+
+            <button class="btn-register" id="btnInscrire" onclick="inscrire()">
+                <i class="fas fa-check-circle me-2"></i>S'inscrire
+            </button>
+
+            <!-- Lien connexion -->
+            <div class="login-link">
+                <a href="/login">
+                    <i class="fas fa-sign-in-alt me-2"></i>Déjà membre ? Se connecter
+                </a>
+            </div>
+        </div>
+
+        <div class="card-footer-custom">
+            <i class="fas fa-shield-alt me-1"></i> Rejoignez notre communauté mutualiste
         </div>
     </div>
-    
+
     <script>
+        // Force du mot de passe
+        document.getElementById('motDePasse').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const strengthBar = document.getElementById('strengthBar');
+            const strengthText = document.getElementById('strengthText');
+            
+            let strength = 0;
+            let message = '';
+            let color = '';
+            
+            if (password.length >= 4) strength += 25;
+            if (password.length >= 8) strength += 25;
+            if (/[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 25;
+            
+            if (strength <= 25) {
+                message = 'Très faible';
+                color = '#ef4444';
+            } else if (strength <= 50) {
+                message = 'Faible';
+                color = '#f59e0b';
+            } else if (strength <= 75) {
+                message = 'Moyen';
+                color = '#eab308';
+            } else {
+                message = 'Fort';
+                color = '#10b981';
+            }
+            
+            strengthBar.style.width = strength + '%';
+            strengthBar.style.background = color;
+            strengthText.innerHTML = message !== '' ? `<span style="color: ${color}">⚡ Force : ${message}</span>` : '';
+        });
+
+        function showMessage(type, text) {
+            const icons = {
+                success: 'fa-check-circle',
+                danger: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = `
+                <div class="alert alert-${type} alert-custom">
+                    <i class="fas ${icons[type] || 'fa-info-circle'}"></i>
+                    <span>${text}</span>
+                </div>
+            `;
+            setTimeout(() => {
+                if (msgDiv.innerHTML === `<div class="alert alert-${type} alert-custom">
+                    <i class="fas ${icons[type] || 'fa-info-circle'}"></i>
+                    <span>${text}</span>
+                </div>`) {
+                    msgDiv.innerHTML = '';
+                }
+            }, 5000);
+        }
+
         function inscrire() {
             let btn = document.getElementById('btnInscrire');
-            let nom = document.getElementById('nom').value;
-            let telephone = document.getElementById('telephone').value;
+            let nom = document.getElementById('nom').value.trim();
+            let telephone = document.getElementById('telephone').value.trim();
             let motDePasse = document.getElementById('motDePasse').value;
             let dateAdhesion = document.getElementById('dateAdhesion').value;
             
-            if(!nom || !telephone) { 
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Veuillez remplir tous les champs</div>'; 
+            if (!nom) { 
+                showMessage('danger', '❌ Veuillez entrer votre nom complet'); 
                 return; 
             }
             
-            if(!motDePasse || motDePasse.length < 4) {
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Mot de passe requis (minimum 4 caractères)</div>'; 
+            if (!telephone) { 
+                showMessage('danger', '❌ Veuillez entrer votre numéro de téléphone'); 
+                return; 
+            }
+            
+            if (!/^\d{8,9}$/.test(telephone.replace(/\s/g, ''))) {
+                showMessage('danger', '❌ Format de téléphone invalide (8 à 9 chiffres)');
+                return;
+            }
+            
+            if (!motDePasse || motDePasse.length < 4) {
+                showMessage('danger', '❌ Mot de passe requis (minimum 4 caractères)'); 
                 return;
             }
             
             btn.disabled = true; 
             btn.classList.add('btn-loading'); 
-            btn.innerHTML = '⏳ Inscription en cours...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Inscription en cours...';
             
             fetch('/api/inscription', { 
                 method: 'POST', 
@@ -107,21 +532,32 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Inscription réussie ! Redirection...</div>';
+                    showMessage('success', '✅ Inscription réussie ! Redirection vers la page de connexion...');
                     setTimeout(() => window.location.href = '/login', 2000);
                 } else { 
-                    document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; 
+                    showMessage('danger', '❌ ' + (data.message || 'Erreur lors de l\'inscription')); 
                     btn.disabled = false; 
                     btn.classList.remove('btn-loading'); 
-                    btn.innerHTML = 'S\'inscrire';
+                    btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>S\'inscrire';
                 }
             }).catch(() => { 
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Erreur</div>'; 
+                showMessage('danger', '❌ Erreur de connexion au serveur'); 
                 btn.disabled = false; 
                 btn.classList.remove('btn-loading'); 
-                btn.innerHTML = 'S\'inscrire';
+                btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>S\'inscrire';
             });
         }
+
+        // Support Enter key
+        document.getElementById('motDePasse').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') inscrire();
+        });
+        document.getElementById('telephone').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') inscrire();
+        });
+        document.getElementById('nom').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') inscrire();
+        });
     </script>
 </body>
 </html>
