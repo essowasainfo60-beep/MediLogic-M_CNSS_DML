@@ -175,9 +175,10 @@ def api_inscription():
     data = request.json
     nom = data.get('nom')
     telephone = data.get('telephone')
+    date_inscription = data.get('date_inscription', datetime.now().strftime('%Y-%m-%d'))
     
     if not nom or not telephone:
-        return jsonify({'success': False, 'message': 'Champs requis'})
+        return jsonify({'success': False, 'message': 'Nom et téléphone requis'})
     
     conn = get_db()
     cur = conn.cursor()
@@ -189,23 +190,18 @@ def api_inscription():
         conn.close()
         return jsonify({'success': False, 'message': 'Ce numéro existe déjà'})
     
-    # Ajouter membre avec frais d'adhésion
+    # Ajouter membre avec la date fournie
     cur.execute("""
-        INSERT INTO membres (nom, telephone, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut)
-        VALUES (%s, %s, 4000, 0, 4000, 'impaye')
+        INSERT INTO membres (nom, telephone, date_inscription, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut, role)
+        VALUES (%s, %s, %s, 4000, 0, 4000, 'impaye', 'membre')
         RETURNING id
-    """, (nom, telephone))
-    membre_id = cur.fetchone()['id']
-    
-    # Enregistrer le paiement de l'adhésion si payé maintenant
-    # (par défaut, impayé - à payer plus tard)
+    """, (nom, telephone, date_inscription))
     
     conn.commit()
     cur.close()
     conn.close()
     
     return jsonify({'success': True, 'message': 'Inscription réussie'})
-
 # ==================== API MEMBRES ====================
 @app.route('/api/membres', methods=['GET'])
 def get_membres():
@@ -264,7 +260,6 @@ def add_membre():
     conn.close()
     
     return jsonify({'success': True, 'message': 'Membre ajouté'})
-
 @app.route('/api/membres/<int:id>', methods=['DELETE'])
 def delete_membre(id):
     if session.get('user_role') != 'admin':
