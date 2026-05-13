@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import hashlib
+from dateutil.relativedelta import relativedelta
 
 load_dotenv()
 
@@ -338,18 +339,18 @@ def add_cotisation():
     
     data = request.json
     id_membre = data['id_membre']
-    periode = data['periode']
-    mois_debut = data['mois_debut']
+    periode = data['periode']  # 1, 3, 6, 12
+    mois_debut = data['mois_debut']  # format: '2026-01'
     montant_unitaire = data.get('montant_unitaire', 1000)
     
     # Utiliser le nom de l'admin connecté automatiquement
     enregistre_par = session.get('user_nom', 'admin')
     
+    # Calculer les dates
     debut = datetime.strptime(mois_debut + '-01', '%Y-%m-%d')
-    mois_fin = debut + timedelta(days=(periode * 30))
-    # Ajuster la date de fin au dernier jour du mois
-    if mois_fin.month != debut.month + periode:
-        mois_fin = mois_fin.replace(day=1) - timedelta(days=1)
+    # Ajouter le nombre de mois et reculer d'un jour pour avoir le dernier jour
+    fin = debut + relativedelta(months=periode) - timedelta(days=1)
+    
     montant_total = periode * montant_unitaire
     
     conn = get_db()
@@ -365,7 +366,7 @@ def add_cotisation():
             (mois_debut BETWEEN %s AND %s) OR
             (mois_fin BETWEEN %s AND %s)
         )
-    """, (id_membre, mois_fin, debut, debut, mois_fin, debut, mois_fin))
+    """, (id_membre, fin, debut, debut, fin, debut, fin))
     
     existant = cur.fetchone()
     if existant:
@@ -376,13 +377,13 @@ def add_cotisation():
             'message': f'⚠️ Période déjà couverte ! Déjà payé du {existant["mois_debut"].strftime("%B %Y")} au {existant["mois_fin"].strftime("%B %Y")}'
         })
     
-    # Enregistrer cotisation
+    # Enregistrer la cotisation
     cur.execute("""
         INSERT INTO cotisations (id_membre, mois_debut, mois_fin, nombre_mois, montant_total, montant_unitaire, enregistre_par)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """, (id_membre, debut, mois_fin, periode, montant_total, montant_unitaire, enregistre_par))
+    """, (id_membre, debut, fin, periode, montant_total, montant_unitaire, enregistre_par))
     
-    # Alimenter caisse
+    # Alimenter la caisse
     cur.execute("SELECT COALESCE(solde_apres, 0) FROM caisse ORDER BY id DESC LIMIT 1")
     solde = cur.fetchone()
     solde_actuel = solde['coalesce'] if solde else 0
@@ -391,13 +392,16 @@ def add_cotisation():
     cur.execute("""
         INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
         VALUES ('entree', %s, %s, %s, %s, %s)
-    """, (montant_total, f"Cotisation {periode} mois a partir de {mois_debut}", str(id_membre), nouveau_solde, enregistre_par))
+    """, (montant_total, f"Cotisation {periode} mois à partir de {mois_debut}", str(id_membre), nouveau_solde, enregistre_par))
     
     conn.commit()
     cur.close()
     conn.close()
     
-    return jsonify({'success': True, 'message': f'{montant_total} FCFA enregistrés pour {periode} mois'})
+    return jsonify({
+        'success': True, 
+        'message': f'{montant_total} FCFA enregistrés pour {periode} mois (du {debut.strftime("%B %Y")} au {fin.strftime("%B %Y")})'
+    })
 
 @app.route('/api/cotisations/historique', methods=['GET'])
 def get_historique():
