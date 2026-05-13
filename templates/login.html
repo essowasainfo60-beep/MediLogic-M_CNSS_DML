@@ -37,9 +37,12 @@
                             <div class="mb-3"><label>🔒 Mot de passe</label><input type="password" id="adminPassword" class="form-control" placeholder="....."></div>
                             <button class="btn btn-primary w-100" id="btnAdminLogin" onclick="connexionAdmin()">Se connecter</button>
                         </div>
-                        
                         <div id="formMembre" style="display:none">
                             <div class="mb-3"><label>📱 Numéro WhatsApp</label><input type="tel" id="membreTelephone" class="form-control" placeholder="90123456"></div>
+                        <div class="mb-3">
+                            <label>🔒 Mot de passe</label>
+                            <input type="password" id="membrePassword" class="form-control" placeholder="Votre mot de passe">
+                        </div>
                             <button class="btn btn-success w-100" id="btnMembreLogin" onclick="connexionMembre()">Se connecter</button>
                         </div>
                         
@@ -97,6 +100,12 @@
 function connexionMembre() {
     let btn = document.getElementById('btnMembreLogin');
     let telephone = document.getElementById('membreTelephone').value;
+    let motDePasse = document.getElementById('membrePassword').value;
+    
+    if(!telephone || !motDePasse) {
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Téléphone et mot de passe requis</div>';
+        return;
+    }
     
     btn.disabled = true;
     btn.classList.add('btn-loading');
@@ -105,14 +114,14 @@ function connexionMembre() {
     fetch('/api/membre/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({telephone: telephone})
+        body: JSON.stringify({telephone: telephone, mot_de_passe: motDePasse})
     })
     .then(res => res.json())
     .then(data => {
         if(data.success) {
             document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Bienvenue ' + data.nom + ' ! Redirection...</div>';
             setTimeout(() => {
-                window.location.href = data.redirect;  // ← Redirige correctement
+                window.location.href = data.redirect;
             }, 1000);
         } else {
             document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
@@ -128,7 +137,6 @@ function connexionMembre() {
         btn.innerHTML = 'Se connecter';
     });
 }
-
     </script>
 </body>
 </html>

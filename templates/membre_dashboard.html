@@ -3,266 +3,631 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLogic-M_CNSS_DML - Mon espace</title>
+    <title>MediLogic | Espace Membre</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; }
-        .stat-card { border-radius: 15px; transition: transform 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .status-vert { color: #27ae60; }
-        .status-rouge { color: #e74c3c; }
-        .btn-pdf { background: #dc3545; color: white; }
-        .btn-pdf:hover { background: #bb2d3b; color: white; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Glass morphism header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .welcome-text h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .welcome-text p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            border: none;
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #fff, rgba(255,255,255,0.5));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-bg-1 { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .card-bg-2 { background: linear-gradient(135deg, #2980b9, #3498db); }
+        .card-bg-3 { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .card-bg-4 { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        .stat-card .card-body {
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .stat-card h6 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .stat-card h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        /* Info Cards */
+        .info-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            height: 100%;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 20px 20px 0 0;
+            font-weight: 600;
+            border: none;
+        }
+
+        .card-header-custom i {
+            margin-right: 10px;
+        }
+
+        /* Table styles */
+        .table-custom {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .table-custom thead th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8f9ff;
+            transform: scale(1.01);
+        }
+
+        .table-custom tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Buttons */
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border-radius: 50px;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border-radius: 10px;
+            padding: 0.4rem 1rem;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+            color: white;
+        }
+
+        .btn-logout {
+            background: rgba(220, 53, 69, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #dc3545;
+            transform: scale(1.05);
+        }
+
+        /* Status badges */
+        .badge-success {
+            background: #27ae60;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: #e74c3c;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Amount styles */
+        .amount {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .amount-small {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .glass-header {
+                padding: 1rem;
+            }
+            
+            .welcome-text h1 {
+                font-size: 1.3rem;
+            }
+            
+            .stat-card h2 {
+                font-size: 1.5rem;
+            }
+            
+            body {
+                padding: 1rem;
+            }
+        }
+
         @media print {
-            .btn, .btn-pdf, .no-print { display: none; }
+            .no-print, .btn, .btn-pdf, .btn-logout, .btn-whatsapp {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .glass-header {
+                background: white;
+                box-shadow: none;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .badge-payment {
+            padding: 0.4rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-unpaid {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
-    <div class="container py-4">
-        <!-- En-tête -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-user-circle me-2"></i>Mon espace MediLogic</h1>
-            <div class="d-flex align-items-center gap-3">
-                <div id="userInfo"></div>
-                <button class="btn btn-danger btn-sm no-print" onclick="deconnexion()">
-                    <i class="fas fa-sign-out-alt"></i> Déconnexion
-                </button>
-            </div>
-        </div>
-        
-        <!-- Cartes statistiques -->
-        <div class="row mb-4" id="stats">
-            <div class="col-md-3 mb-3">
-                <div class="card stat-card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h6>🟢 Statut</h6>
-                        <h2 id="statut">Chargement...</h2>
+    <div class="main-container">
+        <!-- En-tête amélioré -->
+        <div class="glass-header animate-in">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="welcome-text">
+                        <h1><i class="fas fa-shield-alt me-2"></i>MediLogic Espace Membre</h1>
+                        <p><i class="fas fa-map-marker-alt me-1"></i>CNSS du Maritime Lacs | Assurance santé mutualiste</p>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stat-card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h6>📆 Mois cotisés</h6>
-                        <h2 id="moisCotises">-</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stat-card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h6>💰 Total payé</h6>
-                        <h2 id="totalPaye">- FCFA</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stat-card bg-warning text-dark">
-                    <div class="card-body text-center">
-                        <h6>⚠️ Reste à payer</h6>
-                        <h2 id="resteAPayer">- FCFA</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Informations mensuelles -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        <i class="fas fa-money-bill"></i> Ma cotisation
-                    </div>
-                    <div class="card-body text-center">
-                        <h3>1000 FCFA / mois</h3>
-                        <p class="text-muted">Paiement dû avant le 5 de chaque mois</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        <i class="fas fa-calendar-alt"></i> Prochain paiement
-                    </div>
-                    <div class="card-body text-center">
-                        <h3 id="prochainPaiement">-</h3>
-                        <button class="btn btn-success mt-2 no-print" onclick="ouvrirWhatsApp()">
-                            <i class="fab fa-whatsapp"></i> Me rappeler
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="d-flex justify-content-md-end align-items-center gap-3">
+                        <div id="userInfo" class="fw-semibold text-dark"></div>
+                        <button class="btn btn-logout text-white no-print" onclick="deconnexion()">
+                            <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Historique personnel -->
-        <div class="card mb-4">
-            <div class="card-header bg-secondary text-white">
+
+        <!-- Cartes statistiques modernisées -->
+        <div class="row mb-4 g-4" id="stats">
+            <div class="col-md-3 animate-in" style="animation-delay: 0.1s;">
+                <div class="card stat-card card-bg-1">
+                    <div class="card-body">
+                        <h6><i class="fas fa-circle me-2"></i>STATUT</h6>
+                        <h2 id="statut">Chargement...</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 animate-in" style="animation-delay: 0.2s;">
+                <div class="card stat-card card-bg-2">
+                    <div class="card-body">
+                        <h6><i class="fas fa-calendar-check me-2"></i>MOIS COTISÉS</h6>
+                        <h2 id="moisCotises">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 animate-in" style="animation-delay: 0.3s;">
+                <div class="card stat-card card-bg-3">
+                    <div class="card-body">
+                        <h6><i class="fas fa-chart-line me-2"></i>TOTAL PAYÉ</h6>
+                        <h2 id="totalPaye">- FCFA</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 animate-in" style="animation-delay: 0.4s;">
+                <div class="card stat-card card-bg-4">
+                    <div class="card-body">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>RESTE À PAYER</h6>
+                        <h2 id="resteAPayer">- FCFA</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations complémentaires -->
+        <div class="row mb-4 g-4">
+            <div class="col-md-6 animate-in" style="animation-delay: 0.5s;">
+                <div class="info-card">
+                    <div class="card-header-custom">
+                        <i class="fas fa-hand-holding-usd"></i> Ma cotisation mensuelle
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <div class="amount text-primary mb-2">1 000 FCFA</div>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-calendar-alt me-1"></i> Paiement dû avant le 5 de chaque mois
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 animate-in" style="animation-delay: 0.6s;">
+                <div class="info-card">
+                    <div class="card-header-custom">
+                        <i class="fas fa-bell"></i> Prochain échéance
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <div class="amount text-warning mb-2" id="prochainPaiement">-</div>
+                        <button class="btn btn-whatsapp no-print" onclick="ouvrirWhatsApp()">
+                            <i class="fab fa-whatsapp me-2"></i>Me rappeler par WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historique des paiements amélioré -->
+        <div class="info-card mb-4 animate-in" style="animation-delay: 0.7s;">
+            <div class="card-header-custom">
                 <i class="fas fa-history"></i> Mon historique des paiements
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-custom mb-0">
                         <thead>
-                            <tr><th>Mois</th><th>Montant</th><th>Date paiement</th><th>Reçu</th></tr>
+                            <tr>
+                                <th><i class="far fa-calendar-alt me-2"></i>Mois</th>
+                                <th><i class="fas fa-money-bill-wave me-2"></i>Montant</th>
+                                <th><i class="far fa-clock me-2"></i>Date paiement</th>
+                                <th><i class="fas fa-receipt me-2"></i>Reçu</th>
+                            </tr>
                         </thead>
                         <tbody id="historique"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
+
         <!-- Informations personnelles -->
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <i class="fas fa-info-circle"></i> Mes informations
+        <div class="info-card animate-in" style="animation-delay: 0.8s;">
+            <div class="card-header-custom">
+                <i class="fas fa-user-circle"></i> Mes informations personnelles
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-6">
-                        <p><strong>📱 Téléphone :</strong> <span id="telephone">-</span></p>
-                        <p><strong>📅 Membre depuis :</strong> <span id="dateInscription">-</span></p>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-phone-alt fa-2x text-primary me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Téléphone</small>
+                                <strong id="telephone" class="fs-5">-</strong>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-plus fa-2x text-success me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Membre depuis</small>
+                                <strong id="dateInscription" class="fs-5">-</strong>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>💰 Adhésion :</strong> <span id="adhesionStatut">-</span></p>
-                        <p><strong>📧 Contact :</strong> <a href="#" onclick="ouvrirWhatsApp()">Envoyer un message</a></p>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-ticket-alt fa-2x text-warning me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Frais d'adhésion</small>
+                                <strong id="adhesionStatut" class="fs-5">-</strong>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fab fa-whatsapp fa-2x text-success me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Support</small>
+                                <a href="#" onclick="ouvrirWhatsApp()" class="text-decoration-none">
+                                    <strong>Contacter le support →</strong>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Pied de page -->
-        <div class="text-center text-muted mt-4">
-            <small>MediLogic-M_CNSS_DML - CNSS du Maritime Lacs</small>
+
+        <!-- Footer -->
+        <div class="text-center mt-4 pt-3">
+            <small class="text-white-50">
+                <i class="fas fa-lock me-1"></i> MediLogic-M_CNSS_DML - CNSS du Maritime Lacs
+                <br>Plateforme sécurisée de gestion mutualiste
+            </small>
         </div>
     </div>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script>
         let membreData = {};
         
-function chargerDashboard() {
-    fetch('/api/membre/dashboard')
-        .then(res => res.json())
-        .then(data => {
-            membreData = data;
-            
-            // Statut - Correction ici
-            let statutHtml = data.statut === 'À jour' ? 
-                '<span class="status-vert">✅ À jour</span>' : 
-                '<span class="status-rouge">❌ En retard (' + data.mois_retard + ' mois)</span>';
-            document.getElementById('statut').innerHTML = statutHtml;
-            
-            // Stats
-            document.getElementById('moisCotises').innerText = data.mois_cotises;
-            document.getElementById('totalPaye').innerHTML = data.total_paye + ' FCFA';
-            document.getElementById('resteAPayer').innerHTML = data.reste_a_payer + ' FCFA';
-            
-            // Prochain paiement
-            let prochain = new Date(data.prochain_paiement);
-            document.getElementById('prochainPaiement').innerHTML = prochain.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-            
-            // Infos perso
-            document.getElementById('telephone').innerText = data.telephone;
-            document.getElementById('dateInscription').innerText = new Date(data.date_inscription).toLocaleDateString('fr-FR');
-            
-            let adhesionHtml = data.adhesion_statut === 'paye' ? 
-                '<span class="text-success">✅ Payée (4000 FCFA)</span>' : 
-                '<span class="text-danger">❌ Non payée</span>';
-            document.getElementById('adhesionStatut').innerHTML = adhesionHtml;
-        });
-}        
-function chargerHistorique() {
-    fetch('/api/membre/historique')
-        .then(res => res.json())
-        .then(data => {
-            let html = '';
-            data.forEach(h => {
-                // Si période multiple (12 mois), afficher la plage
-                let periode = h.periode;
-                let pdfBtn = h.paye ? `<button class="btn btn-sm btn-pdf" onclick="telechargerRecu(${h.id})"><i class="fas fa-file-pdf"></i></button>` : '';
-                
-                html += `<tr>
-                    <td><strong>${periode}</strong></td>
-                    <td>${h.montant} FCFA</td class="text-success">
-                    <td class="${h.paye ? 'text-success' : 'text-danger'}">${h.date_paiement ? new Date(h.date_paiement).toLocaleDateString('fr-FR') : '-'}${h.paye ? ' ✅ Payé' : ' ❌ Impayé'}</td>
-                    <td>${pdfBtn}</td>
-                </tr>`;
-            });
-            document.getElementById('historique').innerHTML = html;
-        });
-}
+        function chargerDashboard() {
+            fetch('/api/membre/dashboard')
+                .then(res => res.json())
+                .then(data => {
+                    membreData = data;
+                    
+                    // Statut avec badge moderne
+                    let statutHtml = data.statut === 'À jour' ? 
+                        '<div class="badge-success d-inline-block"><i class="fas fa-check-circle me-2"></i>À jour ✓</div>' : 
+                        '<div class="badge-danger d-inline-block"><i class="fas fa-exclamation-circle me-2"></i>En retard (' + data.mois_retard + ' mois)</div>';
+                    document.getElementById('statut').innerHTML = statutHtml;
+                    
+                    // Stats
+                    document.getElementById('moisCotises').innerText = data.mois_cotises;
+                    document.getElementById('totalPaye').innerHTML = data.total_paye.toLocaleString() + ' FCFA';
+                    document.getElementById('resteAPayer').innerHTML = data.reste_a_payer.toLocaleString() + ' FCFA';
+                    
+                    // Prochain paiement
+                    let prochain = new Date(data.prochain_paiement);
+                    let moisOptions = { month: 'long', year: 'numeric' };
+                    document.getElementById('prochainPaiement').innerHTML = prochain.toLocaleDateString('fr-FR', moisOptions);
+                    
+                    // Infos perso
+                    document.getElementById('telephone').innerText = data.telephone;
+                    let dateInsc = new Date(data.date_inscription);
+                    document.getElementById('dateInscription').innerHTML = dateInsc.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    
+                    let adhesionHtml = data.adhesion_statut === 'paye' ? 
+                        '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Payée (4 000 FCFA)</span>' : 
+                        '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Non payée</span>';
+                    document.getElementById('adhesionStatut').innerHTML = adhesionHtml;
+                })
+                .catch(error => console.error('Erreur:', error));
+        }
         
-function telechargerRecu(id) {
-    fetch(`/api/membre/reçu/${id}`)
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
-                // Créer le contenu HTML du reçu
-                const element = document.createElement('div');
-                element.innerHTML = `
-                    <div style="padding: 30px; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <div style="text-align: center; margin-bottom: 30px;">
-                            <h2 style="color: #1a2a6c;">MediLogic-M_CNSS_DML</h2>
-                            <h3 style="color: #b21f1f;">Reçu de paiement</h3>
-                            <p>CNSS du Maritime Lacs</p>
-                        </div>
+        function chargerHistorique() {
+            fetch('/api/membre/historique')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    data.forEach(h => {
+                        let periode = h.periode;
+                        let statutClass = h.paye ? 'badge-paid' : 'badge-unpaid';
+                        let statutText = h.paye ? 'Payé ✓' : 'Impayé ✗';
+                        let statutBadge = `<span class="badge-payment ${statutClass}">${statutText}</span>`;
+                        let dateText = h.date_paiement ? new Date(h.date_paiement).toLocaleDateString('fr-FR') : '-';
+                        let pdfBtn = h.paye ? 
+                            `<button class="btn btn-pdf btn-sm" onclick="telechargerRecu(${h.id})">
+                                <i class="fas fa-file-pdf me-1"></i>PDF
+                            </button>` : 
+                            '<span class="text-muted">-</span>';
                         
-                        <div style="border-top: 2px solid #333; border-bottom: 2px solid #333; padding: 15px 0; margin-bottom: 20px;">
-                            <p><strong>👤 Membre :</strong> ${data.nom}</p>
-                            <p><strong>📱 Téléphone :</strong> ${data.telephone}</p>
-                            <p><strong>📅 Date du paiement :</strong> ${new Date(data.date).toLocaleDateString('fr-FR')}</p>
-                            <p><strong>💰 Montant payé :</strong> <span style="font-size: 18px; color: #27ae60;">${data.montant} FCFA</span></p>
-                        </div>
+                        html += `
+                            <tr>
+                                <td><strong><i class="far fa-calendar-alt me-2 text-primary"></i>${periode}</strong></td>
+                                <td class="fw-semibold text-success">${h.montant.toLocaleString()} FCFA</td>
+                                <td>${dateText}<br>${statutBadge}</td>
+                                <td>${pdfBtn}</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('historique').innerHTML = html;
+                })
+                .catch(error => console.error('Erreur:', error));
+        }
+        
+        function telechargerRecu(id) {
+            fetch(`/api/membre/reçu/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        const element = document.createElement('div');
+                        element.style.padding = '40px';
+                        element.style.fontFamily = 'Arial, sans-serif';
+                        element.style.maxWidth = '600px';
+                        element.style.margin = '0 auto';
+                        element.style.background = 'white';
+                        element.innerHTML = `
+                            <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 20px;">
+                                <div style="font-size: 2.5rem; color: #667eea;">🏥</div>
+                                <h2 style="color: #667eea; margin: 10px 0 5px;">MediLogic-M_CNSS_DML</h2>
+                                <h3 style="color: #764ba2;">Reçu de paiement officiel</h3>
+                                <p style="color: #666;">CNSS du Maritime Lacs</p>
+                            </div>
+                            
+                            <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span><strong>👤 Membre :</strong></span>
+                                    <span>${data.nom}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span><strong>📱 Téléphone :</strong></span>
+                                    <span>${data.telephone}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span><strong>📅 Date paiement :</strong></span>
+                                    <span>${new Date(data.date).toLocaleDateString('fr-FR')}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span><strong>💰 Montant :</strong></span>
+                                    <span style="font-size: 1.3rem; color: #27ae60; font-weight: bold;">${data.montant.toLocaleString()} FCFA</span>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span><strong>📆 Période couverte :</strong></span>
+                                    <span>${data.periode}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                                    <span><strong>💵 Cotisation mensuelle :</strong></span>
+                                    <span>1 000 FCFA</span>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #ddd;">
+                                <p style="color: #27ae60; font-weight: bold;">✓ Paiement validé</p>
+                                <p style="color: #999; font-size: 12px;">Merci pour votre confiance - Ce document fait office de reçu officiel</p>
+                            </div>
+                        `;
                         
-                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <p><strong>📆 Période couverte :</strong> ${data.periode}</p>
-                            <p><strong>💵 Cotisation mensuelle :</strong> 1000 FCFA</p>
-                            <p><strong>✓ Statut :</strong> <span style="color: #27ae60;">Payé ✅</span></p>
-                        </div>
-                        
-                        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
-                            <p>Merci pour votre confiance</p>
-                            <p>MediLogic-M_CNSS_DML - Gestionnaire de mutuelle</p>
-                            <p>Ce document fait office de reçu officiel</p>
-                        </div>
-                    </div>
-                `;
-                
-                // Générer le PDF
-                html2pdf().from(element).set({
-                    margin: [0.5, 0.5, 0.5, 0.5],
-                    filename: `recu_${data.periode.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, letterRendering: true },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-                }).save();
-            } else {
-                alert('❌ Erreur lors de la génération du reçu');
-            }
-        });
-}
+                        html2pdf().from(element).set({
+                            margin: [0.5, 0.5, 0.5, 0.5],
+                            filename: `recu_${data.periode.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2, letterRendering: true },
+                            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                        }).save();
+                    } else {
+                        alert('❌ Erreur lors de la génération du reçu');
+                    }
+                });
+        }
         
         function ouvrirWhatsApp() {
             let tel = membreData.telephone;
-            let annee = new Date().getFullYear();
-            let message = `Bonjour ${membreData.nom}, je consulte mon espace MediLogic. Mon statut est: ${membreData.statut}. Reste à payer: ${membreData.reste_a_payer} FCFA. Merci!`;
+            let message = `Bonjour ${membreData.nom}, je consulte mon espace MediLogic. Mon statut est: ${membreData.statut}. Reste à payer: ${membreData.reste_a_payer.toLocaleString()} FCFA. Merci!`;
             let url = `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');
         }
         
         function afficherUser() {
-            fetch('/api/session').then(res => res.json()).then(data => {
-                if(data.logged_in) {
-                    document.getElementById('userInfo').innerHTML = `👤 ${data.nom}`;
-                }
-            });
+            fetch('/api/session')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.logged_in) {
+                        document.getElementById('userInfo').innerHTML = `<i class="fas fa-user-circle me-2"></i>${data.nom}`;
+                    }
+                });
         }
         
-        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        function deconnexion() { 
+            fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); 
+        }
         
+        // Initialisation
         afficherUser();
         chargerDashboard();
         chargerHistorique();

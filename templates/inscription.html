@@ -38,6 +38,12 @@
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label">🔒 Mot de passe</label>
+                            <input type="password" id="motDePasse" class="form-control" placeholder="Minimum 4 caractères">
+                            <small class="text-muted">Choisissez un mot de passe sécurisé</small>
+                        </div>
+                        
+                        <div class="mb-3">
                             <label class="form-label">📅 Date d'adhésion</label>
                             <input type="date" id="dateAdhesion" class="form-control" value="2026-01-01">
                             <small class="text-muted">Date depuis laquelle vous êtes membre</small>
@@ -71,11 +77,17 @@
             let btn = document.getElementById('btnInscrire');
             let nom = document.getElementById('nom').value;
             let telephone = document.getElementById('telephone').value;
+            let motDePasse = document.getElementById('motDePasse').value;
             let dateAdhesion = document.getElementById('dateAdhesion').value;
             
             if(!nom || !telephone) { 
                 document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Veuillez remplir tous les champs</div>'; 
                 return; 
+            }
+            
+            if(!motDePasse || motDePasse.length < 4) {
+                document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Mot de passe requis (minimum 4 caractères)</div>'; 
+                return;
             }
             
             btn.disabled = true; 
@@ -86,8 +98,9 @@
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({
-                    nom, 
-                    telephone, 
+                    nom: nom, 
+                    telephone: telephone,
+                    mot_de_passe: motDePasse,
                     date_inscription: dateAdhesion
                 }) 
             })

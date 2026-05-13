@@ -132,10 +132,17 @@ def api_admin_login():
 def api_membre_login():
     data = request.json
     telephone = data.get('telephone')
+    mot_de_passe = data.get('mot_de_passe')
+    
+    if not telephone or not mot_de_passe:
+        return jsonify({'success': False, 'message': 'Téléphone et mot de passe requis'})
+    
+    hash_mdp = hashlib.sha256(mot_de_passe.encode()).hexdigest()
     
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id, nom, role FROM membres WHERE telephone LIKE %s", (f'%{telephone}%',))
+    cur.execute("SELECT id, nom, role FROM membres WHERE telephone LIKE %s AND mot_de_passe = %s", 
+                (f'%{telephone}%', hash_mdp))
     membre = cur.fetchone()
     cur.close()
     conn.close()
@@ -143,15 +150,10 @@ def api_membre_login():
     if membre:
         session['user_id'] = membre['id']
         session['user_nom'] = membre['nom']
-        session['user_role'] = membre.get('role', 'membre')
-        
-        # Rediriger vers le bon dashboard selon le rôle
-        if session['user_role'] == 'admin':
-            return jsonify({'success': True, 'nom': membre['nom'], 'role': 'admin', 'redirect': '/'})
-        else:
-            return jsonify({'success': True, 'nom': membre['nom'], 'role': 'membre', 'redirect': '/membre'})
+        session['user_role'] = 'membre'
+        return jsonify({'success': True, 'nom': membre['nom'], 'role': 'membre', 'redirect': '/membre'})
     
-    return jsonify({'success': False, 'message': 'Numéro non trouvé'})
+    return jsonify({'success': False, 'message': 'Numéro ou mot de passe incorrect'})
 
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
@@ -175,10 +177,17 @@ def api_inscription():
     data = request.json
     nom = data.get('nom')
     telephone = data.get('telephone')
+    mot_de_passe = data.get('mot_de_passe')
     date_inscription = data.get('date_inscription', datetime.now().strftime('%Y-%m-%d'))
     
     if not nom or not telephone:
         return jsonify({'success': False, 'message': 'Nom et téléphone requis'})
+    
+    if not mot_de_passe or len(mot_de_passe) < 4:
+        return jsonify({'success': False, 'message': 'Mot de passe requis (minimum 4 caractères)'})
+    
+    # Hasher le mot de passe
+    hash_mdp = hashlib.sha256(mot_de_passe.encode()).hexdigest()
     
     conn = get_db()
     cur = conn.cursor()
@@ -190,18 +199,19 @@ def api_inscription():
         conn.close()
         return jsonify({'success': False, 'message': 'Ce numéro existe déjà'})
     
-    # Ajouter membre avec la date fournie
+    # Ajouter membre avec mot de passe hashé
     cur.execute("""
-        INSERT INTO membres (nom, telephone, date_inscription, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut, role)
-        VALUES (%s, %s, %s, 4000, 0, 4000, 'impaye', 'membre')
+        INSERT INTO membres (nom, telephone, mot_de_passe, date_inscription, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut, role)
+        VALUES (%s, %s, %s, %s, 4000, 0, 4000, 'impaye', 'membre')
         RETURNING id
-    """, (nom, telephone, date_inscription))
+    """, (nom, telephone, hash_mdp, date_inscription))
     
     conn.commit()
     cur.close()
     conn.close()
     
     return jsonify({'success': True, 'message': 'Inscription réussie'})
+
 # ==================== API MEMBRES ====================
 @app.route('/api/membres', methods=['GET'])
 def get_membres():
