@@ -410,18 +410,75 @@ def get_historique():
     
     if session.get('user_role') == 'membre':
         cur.execute("""
-            SELECT c.*, m.nom as membre_nom, m.telephone 
+            SELECT 
+                c.id, 
+                c.montant_total as montant, 
+                c.date_paiement, 
+                c.enregistre_par,
+                c.mois_debut, 
+                c.mois_fin, 
+                c.nombre_mois,
+                'cotisation' as type_paiement, 
+                m.nom as membre_nom, 
+                m.telephone
             FROM cotisations c
             JOIN membres m ON c.id_membre = m.id
             WHERE c.id_membre = %s
-            ORDER BY c.date_paiement DESC
-        """, (session['user_id'],))
+            
+            UNION ALL
+            
+            SELECT 
+                ca.id, 
+                ca.montant, 
+                ca.date_operation as date_paiement, 
+                ca.effectue_par as enregistre_par,
+                NULL as mois_debut, 
+                NULL as mois_fin, 
+                NULL as nombre_mois,
+                'adhesion' as type_paiement, 
+                m.nom as membre_nom, 
+                m.telephone
+            FROM caisse ca
+            JOIN membres m ON ca.source = m.id::text
+            WHERE ca.motif LIKE 'Adhésion%' 
+            AND m.id = %s
+            
+            ORDER BY date_paiement DESC
+        """, (session['user_id'], session['user_id']))
     else:
         cur.execute("""
-            SELECT c.*, m.nom as membre_nom, m.telephone 
+            SELECT 
+                c.id, 
+                c.montant_total as montant, 
+                c.date_paiement, 
+                c.enregistre_par,
+                c.mois_debut, 
+                c.mois_fin, 
+                c.nombre_mois,
+                'cotisation' as type_paiement, 
+                m.nom as membre_nom, 
+                m.telephone
             FROM cotisations c
             JOIN membres m ON c.id_membre = m.id
-            ORDER BY c.date_paiement DESC LIMIT 100
+            
+            UNION ALL
+            
+            SELECT 
+                ca.id, 
+                ca.montant, 
+                ca.date_operation as date_paiement, 
+                ca.effectue_par as enregistre_par,
+                NULL as mois_debut, 
+                NULL as mois_fin, 
+                NULL as nombre_mois,
+                'adhesion' as type_paiement, 
+                m.nom as membre_nom, 
+                m.telephone
+            FROM caisse ca
+            JOIN membres m ON ca.source = m.id::text
+            WHERE ca.motif LIKE 'Adhésion%'
+            
+            ORDER BY date_paiement DESC LIMIT 100
         """)
     
     historique = cur.fetchall()
@@ -444,44 +501,57 @@ def get_solde():
 def get_operations():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM caisse ORDER BY date_operation DESC LIMIT 50")
+    
+    cur.execute("""
+        SELECT 
+            id,
+            date_operation,
+            type,
+            montant,
+            motif,
+            effectue_par,
+            source
+        FROM caisse 
+        ORDER BY date_operation DESC 
+        LIMIT 50
+    """)
     ops = cur.fetchall()
     cur.close()
     conn.close()
-    return jsonify(ops)
-
-@app.route('/api/caisse/sortie', methods=['POST'])
-def add_sortie():
-    if session.get('user_role') != 'admin':
-        return jsonify({'success': False, 'message': 'Seul l\'admin peut décaisser'}), 403
     
-    data = request.json
-    montant = data['montant']
-    motif = data['motif']
+    result = []
+    for op in ops:
+        # Déterminer le type détaillé
+        if op['type'] == 'sortie':
+            type_detail = 'decaissement'
+            type_label = 'Décaissement'
+            type_icon = '⬇️'
+            type_class = 'bg-danger'
+        elif op['type'] == 'entree' and 'Adhésion' in op['motif']:
+            type_detail = 'adhesion'
+            type_label = 'Adhésion'
+            type_icon = '💰'
+            type_class = 'bg-info'
+        else:
+            type_detail = 'cotisation'
+            type_label = 'Cotisation'
+            type_icon = '📆'
+            type_class = 'bg-success'
+        
+        result.append({
+            'id': op['id'],
+            'date_operation': op['date_operation'],
+            'type': op['type'],
+            'type_detail': type_detail,
+            'type_label': type_label,
+            'type_icon': type_icon,
+            'type_class': type_class,
+            'montant': op['montant'],
+            'motif': op['motif'],
+            'effectue_par': op['effectue_par']
+        })
     
-    conn = get_db()
-    cur = conn.cursor()
-    
-    cur.execute("SELECT COALESCE(solde_apres, 0) as solde FROM caisse ORDER BY id DESC LIMIT 1")
-    solde = cur.fetchone()
-    solde_actuel = solde['solde'] if solde else 0
-    
-    if solde_actuel < montant:
-        cur.close()
-        conn.close()
-        return jsonify({'success': False, 'message': 'Solde insuffisant'})
-    
-    nouveau_solde = solde_actuel - montant
-    cur.execute("""
-        INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
-        VALUES ('sortie', %s, %s, %s, %s, %s)
-    """, (montant, motif, 'Décaissement', nouveau_solde, session.get('user_nom')))
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    return jsonify({'success': True, 'message': f'Décaissement de {montant} FCFA effectué'})
+    return jsonify(result)
 
 # ==================== API STATS ====================
 @app.route('/api/stats', methods=['GET'])
@@ -492,24 +562,21 @@ def get_stats():
     cur.execute("SELECT COUNT(*) as total FROM membres WHERE role != 'admin'")
     total = cur.fetchone()['total']
     
-    # Calculer manuellement les membres à jour (sans retard)
     cur.execute("SELECT id FROM membres WHERE role != 'admin'")
     membres = cur.fetchall()
     
     a_jour = 0
-    total_collecte = 0
-    
     for m in membres:
         retard = calculer_mois_retard(m['id'])
         if retard['mois_retard'] == 0:
             a_jour += 1
     
-    # Total collecté (caisse)
-    cur.execute("SELECT COALESCE(solde_apres, 0) as solde FROM caisse ORDER BY id DESC LIMIT 1")
+    # Solde total (cotisations + adhésions)
+    cur.execute("SELECT COALESCE(SUM(CASE WHEN type = 'entree' THEN montant ELSE -montant END), 0) as solde FROM caisse")
     solde = cur.fetchone()
     
-    # Total des cotisations enregistrées
-    cur.execute("SELECT COALESCE(SUM(montant_total), 0) as total FROM cotisations")
+    # Total collecté (cotisations + adhésions)
+    cur.execute("SELECT COALESCE(SUM(montant), 0) as total FROM caisse WHERE type = 'entree'")
     total_collecte = cur.fetchone()['total']
     
     cur.close()
@@ -522,7 +589,6 @@ def get_stats():
         'total_collecte': total_collecte,
         'solde_caisse': solde['solde'] if solde else 0
     })
-
 @app.route('/api/payer_adhesion', methods=['POST'])
 def payer_adhesion():
     if session.get('user_role') != 'admin':
@@ -535,7 +601,8 @@ def payer_adhesion():
     conn = get_db()
     cur = conn.cursor()
     
-    cur.execute("SELECT nom, adhesion_statut, frais_adhesion_paye, frais_adhesion_reste FROM membres WHERE id = %s", (id_membre,))
+    # Récupérer infos membre
+    cur.execute("SELECT nom, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut FROM membres WHERE id = %s", (id_membre,))
     membre = cur.fetchone()
     
     if not membre:
@@ -550,21 +617,33 @@ def payer_adhesion():
     
     reste_actuel = membre['frais_adhesion_reste']
     
-    # Empêcher de payer plus que le reste dû
     if montant > reste_actuel:
         cur.close()
         conn.close()
-        return jsonify({'success': False, 'message': f'Montant trop élevé. Reste à payer: {reste_actuel} FCFA'})
+        return jsonify({'success': False, 'message': f'Montant trop élevé. Reste: {reste_actuel} FCFA'})
     
     nouveau_paye = membre['frais_adhesion_paye'] + montant
     nouveau_reste = reste_actuel - montant
     nouveau_statut = 'payé' if nouveau_reste <= 0 else ('partiel' if nouveau_paye > 0 else 'impaye')
     
+    # Mettre à jour le membre
     cur.execute("""
         UPDATE membres 
         SET frais_adhesion_paye = %s, frais_adhesion_reste = %s, adhesion_statut = %s
         WHERE id = %s
     """, (nouveau_paye, nouveau_reste, nouveau_statut, id_membre))
+    
+    # Récupérer le dernier solde de caisse
+    cur.execute("SELECT COALESCE(solde_apres, 0) as solde FROM caisse ORDER BY id DESC LIMIT 1")
+    solde_row = cur.fetchone()
+    solde_actuel = solde_row['solde'] if solde_row else 0
+    nouveau_solde = solde_actuel + montant
+    
+    # Enregistrer l'adhésion dans la caisse
+    cur.execute("""
+        INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
+        VALUES ('entree', %s, %s, %s, %s, %s)
+    """, (montant, f"Adhésion {membre['nom']}", str(id_membre), nouveau_solde, session.get('user_nom', 'admin')))
     
     conn.commit()
     cur.close()
@@ -577,7 +656,6 @@ def payer_adhesion():
         'paye': nouveau_paye,
         'reste': nouveau_reste
     })
-
 # ==================== ROUTES MEMBRE ====================
 @app.route('/membre')
 def membre_dashboard():

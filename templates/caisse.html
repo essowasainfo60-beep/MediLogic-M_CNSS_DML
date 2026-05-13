@@ -73,8 +73,23 @@ function afficherUser() {
 }        
         function chargerSolde() { fetch('/api/caisse/solde').then(res => res.json()).then(data => document.getElementById('solde').innerText = data.solde + ' FCFA'); }
         
-        function chargerOperations() { fetch('/api/caisse/operations').then(res => res.json()).then(data => { let html = ''; data.forEach(op => { html += `<tr><td>${new Date(op.date_operation).toLocaleString()}</td><td class="${op.type === 'entree' ? 'text-success' : 'text-danger'}">${op.type === 'entree' ? '⬆️ Entrée' : '⬇️ Sortie'}</td><td>${op.montant} FCFA</td><td>${op.motif || '-'}</td><td>${op.effectue_par || '-'}</td></tr>`; }); document.getElementById('operations').innerHTML = html; }); }
-        
+function chargerOperations() {
+    fetch('/api/caisse/operations')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            data.forEach(op => {
+                html += `<tr>
+                    <td>${new Date(op.date_operation).toLocaleString()}</td>
+                    <td><span class="badge ${op.type_class} text-white">${op.type_icon} ${op.type_label}</span></td>
+                    <td class="fw-bold">${op.montant} FCFA</td class="text-success">
+                    <td>${op.motif || '-'}</td class="text-success">
+                    <td>${op.effectue_par || '-'}</td class="text-success">
+                </tr>`;
+            });
+            document.getElementById('operations').innerHTML = html;
+        });
+}        
         function decaisser() {
             let btn = document.getElementById('btnDecaisser');
             let montant = parseFloat(document.getElementById('montant').value);

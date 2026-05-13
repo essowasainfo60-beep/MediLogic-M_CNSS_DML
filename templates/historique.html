@@ -117,50 +117,80 @@ function afficherUser() {
             }
         });
 }        
-        function chargerHistorique() {
-            fetch('/api/cotisations/historique')
-                .then(res => res.json())
-                .then(data => {
-                    historiqueData = data;
-                    afficherTableau(data);
-                })
-                .catch(err => console.error(err));
-        }
-        
-        function afficherTableau(data) {
+function chargerHistorique() {
+    fetch('/api/cotisations/historique')
+        .then(res => res.json())
+        .then(data => {
+            historiqueData = data;  // ← AJOUTE CETTE LIGNE
             let html = '';
             data.forEach(h => {
+                let typeHtml = h.type_paiement === 'adhesion' ? 
+                    '<span class="badge bg-info ms-2">💰 Adhésion</span>' : 
+                    '<span class="badge bg-success ms-2">📆 Cotisation</span>';
+                
                 let periode = '';
-                if(h.mois_debut && h.mois_fin) {
+                if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
                     periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)`;
+                } else if(h.type_paiement === 'adhesion') {
+                    periode = 'Paiement unique (adhésion)';
                 } else {
                     periode = '-';
                 }
                 
                 html += `<tr>
-                    <td>${formatDateTime(h.date_paiement)}</td> <!-- corrigé -->
-                    <td><strong>${h.membre_nom}</strong></td>
-                    <td>${h.telephone || '-'}</td> <!-- corrigé -->
-                    <td>${periode}</td> <!-- corrigé -->
-                    <td class="text-success">${h.montant_total} FCFA</td> <!-- corrigé -->
-                    <td>${h.enregistre_par || '-'}</td> <!-- corrigé -->
+                    <td>${formatDateTime(h.date_paiement)}</td class="text-success">
+                    <td><strong>${h.membre_nom}</strong>${typeHtml}</td class="text-success">
+                    <td>${h.telephone || '-'}</td class="text-success">
+                    <td>${periode}</td class="text-success">
+                    <td class="text-success">${h.montant} FCFA</td class="text-success">
+                    <td>${h.enregistre_par || '-'}</td class="text-success">
                 </tr>`;
             });
             document.getElementById('historique').innerHTML = html;
+        });
+} 
+       
+function afficherTableau(data) {
+    let html = '';
+    data.forEach(h => {
+        let typeHtml = h.type_paiement === 'adhesion' ? 
+            '<span class="badge bg-info ms-2">💰 Adhésion</span>' : 
+            '<span class="badge bg-success ms-2">📆 Cotisation</span>';
+        
+        let periode = '';
+        if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
+            periode = `${formatDate(h.mois_debut)} à ${formatDate(h.mois_fin)} (${h.nombre_mois} mois)`;
+        } else if(h.type_paiement === 'adhesion') {
+            periode = 'Paiement unique (adhésion)';
+        } else {
+            periode = '-';
         }
         
-        function filtrer() {
-            let nom = document.getElementById('searchNom').value.toLowerCase();
-            let telephone = document.getElementById('searchTelephone').value.toLowerCase();
-            
-            let filtered = historiqueData.filter(h => {
-                let matchNom = !nom || (h.membre_nom && h.membre_nom.toLowerCase().includes(nom));
-                let matchTel = !telephone || (h.telephone && h.telephone.toLowerCase().includes(telephone));
-                return matchNom && matchTel;
-            });
-            
-            afficherTableau(filtered);
-        }
+        html += `<tr>
+            <td>${formatDateTime(h.date_paiement)}</td class="text-success">
+            <td><strong>${h.membre_nom}</strong>${typeHtml}</td class="text-success">
+            <td>${h.telephone || '-'}</td class="text-success">
+            <td>${periode}</td class="text-success">
+            <td class="text-success">${h.montant} FCFA</td class="text-success">
+            <td>${h.enregistre_par || '-'}</td class="text-success">
+        </tr>`;
+    });
+    document.getElementById('historique').innerHTML = html;
+}
+
+function filtrer() {
+    let nom = document.getElementById('searchNom').value.toLowerCase();
+    let telephone = document.getElementById('searchTelephone').value.toLowerCase();
+    
+    let filtered = historiqueData.filter(h => {
+        let matchNom = !nom || (h.membre_nom && h.membre_nom.toLowerCase().includes(nom));
+        let matchTel = !telephone || (h.telephone && h.telephone.toLowerCase().includes(telephone));
+        return matchNom && matchTel;
+    });
+    
+    afficherTableau(filtered);
+}
+
         
         function resetFiltres() {
             document.getElementById('searchNom').value = '';
