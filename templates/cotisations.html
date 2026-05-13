@@ -44,7 +44,6 @@
                                 <div class="mb-3"><label>Membre</label><select id="membre" class="form-select"><option value="">Chargement...</option></select></div>
                                 <div class="mb-3"><label>Période</label><select id="periode" class="form-select"><option value="1">1 mois (1000 FCFA)</option><option value="3">3 mois (3000 FCFA)</option><option value="6">6 mois (6000 FCFA)</option><option value="12">12 mois (12000 FCFA)</option></select></div>
                                 <div class="mb-3"><label>Mois de départ</label><input type="month" id="moisDebut" class="form-control"></div>
-                                <div class="mb-3"><label>Enregistré par</label><input type="text" id="enregistrePar" class="form-control" placeholder="Votre nom"></div>
                                 <button class="btn btn-success w-100 admin-only" id="btnPayer" onclick="enregistrerPaiement()"><i class="fas fa-save"></i> Enregistrer paiement</button>
                                 <div id="message" class="mt-2"></div>
                             </div>
@@ -65,23 +64,79 @@
         let userRole = '';
         let membres = [];
         
-        function afficherUser() { fetch('/api/session').then(res => res.json()).then(data => { if(data.logged_in) { userRole = data.role; document.getElementById('userInfo').innerHTML = `${data.role === 'admin' ? '👑' : '👤'} ${data.nom}`; if(data.role !== 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none'); } }); }
+function afficherUser() {
+    fetch('/api/session')
+        .then(res => res.json())
+        .then(data => {
+            if(data.logged_in) {
+                let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '👤') : '👤';
+                let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Admin') : 'Membre';
+                document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${roleText})`;
+                
+                // Cacher le menu Administrateurs si ce n'est pas un super admin
+                if(data.role === 'admin' && !data.is_super_admin) {
+                    let menuAdmins = document.querySelector('a[href="/admins"]');
+                    if(menuAdmins) menuAdmins.style.display = 'none';
+                }
+                
+                // Optionnel : cacher les boutons admin pour les membres
+                if(data.role !== 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                }
+            }
+        });
+}
         
         function chargerMembres() { fetch('/api/membres').then(res => res.json()).then(data => { membres = data; let select = document.getElementById('membre'); select.innerHTML = '<option value="">Choisir un membre</option>'; data.forEach(m => { select.innerHTML += `<option value="${m.id}" data-nom="${m.nom}">${m.nom}</option>`; }); }); }
         
         document.getElementById('membre').addEventListener('change', function() { let id = this.value; if(id) { fetch(`/api/membre/statut/${id}`).then(res => res.json()).then(data => { let html = `<p><strong>${this.options[this.selectedIndex].text}</strong></p><p>Statut: ${data.actuel === 'À jour' ? '✅ À jour' : '❌ En retard'}</p><p>Mois de retard: ${data.mois_retard || 0}</p>`; document.getElementById('recap').innerHTML = html; }); } else { document.getElementById('recap').innerHTML = '<p class="text-muted">Sélectionnez un membre</p>'; } });
         
-        function enregistrerPaiement() {
-            let btn = document.getElementById('btnPayer');
-            let idMembre = document.getElementById('membre').value;
-            let periode = parseInt(document.getElementById('periode').value);
-            let moisDebut = document.getElementById('moisDebut').value;
-            let enregistrePar = document.getElementById('enregistrePar').value;
-            if(!idMembre || !moisDebut || !enregistrePar) { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Remplissez tous les champs</div>'; return; }
-            btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '⏳ Enregistrement...';
-            fetch('/api/cotisations', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_membre: parseInt(idMembre), periode: periode, mois_debut: moisDebut, enregistre_par: enregistrePar, montant_unitaire: 1000 }) })
-            .then(res => res.json()).then(data => { if(data.success) { document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Paiement enregistré !</div>'; document.getElementById('membre').value = ''; document.getElementById('moisDebut').value = ''; document.getElementById('enregistrePar').value = ''; } else { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; } btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; }).catch(() => { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Erreur</div>'; btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; });
-        }
+function enregistrerPaiement() {
+    let btn = document.getElementById('btnPayer');
+    let idMembre = document.getElementById('membre').value;
+    let periode = parseInt(document.getElementById('periode').value);
+    let moisDebut = document.getElementById('moisDebut').value;
+    
+    // Plus besoin de enregistrePar
+    if(!idMembre || !moisDebut) { 
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">Remplissez tous les champs</div>'; 
+        return; 
+    }
+    
+    btn.disabled = true; 
+    btn.classList.add('btn-loading'); 
+    btn.innerHTML = '⏳ Enregistrement...';
+    
+    fetch('/api/cotisations', { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({ 
+            id_membre: parseInt(idMembre), 
+            periode: periode, 
+            mois_debut: moisDebut, 
+            montant_unitaire: 1000 
+            // enregistre_par est pris automatiquement par le backend
+        }) 
+    })
+    .then(res => res.json())
+    .then(data => { 
+        if(data.success) { 
+            document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Paiement enregistré !</div>'; 
+            document.getElementById('membre').value = ''; 
+            document.getElementById('moisDebut').value = ''; 
+        } else { 
+            document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; 
+        } 
+        btn.disabled = false; 
+        btn.classList.remove('btn-loading'); 
+        btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; 
+    }).catch(() => { 
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">Erreur</div>'; 
+        btn.disabled = false; 
+        btn.classList.remove('btn-loading'); 
+        btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer paiement'; 
+    });
+}
         
         function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
         

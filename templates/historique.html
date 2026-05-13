@@ -95,14 +95,28 @@
             return d.toLocaleString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
         
-        function afficherUser() {
-            fetch('/api/session').then(res => res.json()).then(data => {
-                if(data.logged_in) {
-                    document.getElementById('userInfo').innerHTML = `${data.role === 'admin' ? '👑' : '👤'} ${data.nom}`;
+function afficherUser() {
+    fetch('/api/session')
+        .then(res => res.json())
+        .then(data => {
+            if(data.logged_in) {
+                let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '👤') : '👤';
+                let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Admin') : 'Membre';
+                document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${roleText})`;
+                
+                // Cacher le menu Administrateurs si ce n'est pas un super admin
+                if(data.role === 'admin' && !data.is_super_admin) {
+                    let menuAdmins = document.querySelector('a[href="/admins"]');
+                    if(menuAdmins) menuAdmins.style.display = 'none';
                 }
-            });
-        }
-        
+                
+                // Optionnel : cacher les boutons admin pour les membres
+                if(data.role !== 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                }
+            }
+        });
+}        
         function chargerHistorique() {
             fetch('/api/cotisations/historique')
                 .then(res => res.json())

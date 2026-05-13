@@ -94,36 +94,41 @@
             });
         }
         
-        function connexionMembre() {
-            let btn = document.getElementById('btnMembreLogin');
-            let telephone = document.getElementById('membreTelephone').value;
-            
-            btn.disabled = true;
-            btn.classList.add('btn-loading');
-            btn.innerHTML = '⏳ Connexion...';
-            
-            fetch('/api/membre/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({telephone: telephone})
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) { window.location.href = '/'; }
-                else {
-                    document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Numéro non trouvé</div>';
-                    btn.disabled = false;
-                    btn.classList.remove('btn-loading');
-                    btn.innerHTML = 'Se connecter';
-                }
-            })
-            .catch(() => {
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Erreur de connexion</div>';
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.innerHTML = 'Se connecter';
-            });
+function connexionMembre() {
+    let btn = document.getElementById('btnMembreLogin');
+    let telephone = document.getElementById('membreTelephone').value;
+    
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '⏳ Connexion...';
+    
+    fetch('/api/membre/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({telephone: telephone})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Bienvenue ' + data.nom + ' ! Redirection...</div>';
+            setTimeout(() => {
+                window.location.href = data.redirect;  // ← Redirige correctement
+            }, 1000);
+        } else {
+            document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = 'Se connecter';
         }
+    })
+    .catch(() => {
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ Erreur de connexion</div>';
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        btn.innerHTML = 'Se connecter';
+    });
+}
+
     </script>
 </body>
 </html>

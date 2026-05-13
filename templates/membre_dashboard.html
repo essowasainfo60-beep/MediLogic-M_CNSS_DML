@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Mon espace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .stat-card { border-radius: 15px; transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .status-vert { color: #27ae60; }
+        .status-rouge { color: #e74c3c; }
+        .btn-pdf { background: #dc3545; color: white; }
+        .btn-pdf:hover { background: #bb2d3b; color: white; }
+        @media print {
+            .btn, .btn-pdf, .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-user-circle me-2"></i>Mon espace MediLogic</h1>
+            <div class="d-flex align-items-center gap-3">
+                <div id="userInfo"></div>
+                <button class="btn btn-danger btn-sm no-print" onclick="deconnexion()">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </button>
+            </div>
+        </div>
+        
+        <!-- Cartes statistiques -->
+        <div class="row mb-4" id="stats">
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6>🟢 Statut</h6>
+                        <h2 id="statut">Chargement...</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6>📆 Mois cotisés</h6>
+                        <h2 id="moisCotises">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6>💰 Total payé</h6>
+                        <h2 id="totalPaye">- FCFA</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h6>⚠️ Reste à payer</h6>
+                        <h2 id="resteAPayer">- FCFA</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informations mensuelles -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-money-bill"></i> Ma cotisation
+                    </div>
+                    <div class="card-body text-center">
+                        <h3>1000 FCFA / mois</h3>
+                        <p class="text-muted">Paiement dû avant le 5 de chaque mois</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-calendar-alt"></i> Prochain paiement
+                    </div>
+                    <div class="card-body text-center">
+                        <h3 id="prochainPaiement">-</h3>
+                        <button class="btn btn-success mt-2 no-print" onclick="ouvrirWhatsApp()">
+                            <i class="fab fa-whatsapp"></i> Me rappeler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historique personnel -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-history"></i> Mon historique des paiements
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr><th>Mois</th><th>Montant</th><th>Date paiement</th><th>Reçu</th></tr>
+                        </thead>
+                        <tbody id="historique"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informations personnelles -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-info-circle"></i> Mes informations
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>📱 Téléphone :</strong> <span id="telephone">-</span></p>
+                        <p><strong>📅 Membre depuis :</strong> <span id="dateInscription">-</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>💰 Adhésion :</strong> <span id="adhesionStatut">-</span></p>
+                        <p><strong>📧 Contact :</strong> <a href="#" onclick="ouvrirWhatsApp()">Envoyer un message</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pied de page -->
+        <div class="text-center text-muted mt-4">
+            <small>MediLogic-M_CNSS_DML - CNSS du Maritime Lacs</small>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        let membreData = {};
+        
+function chargerDashboard() {
+    fetch('/api/membre/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            membreData = data;
+            
+            // Statut - Correction ici
+            let statutHtml = data.statut === 'À jour' ? 
+                '<span class="status-vert">✅ À jour</span>' : 
+                '<span class="status-rouge">❌ En retard (' + data.mois_retard + ' mois)</span>';
+            document.getElementById('statut').innerHTML = statutHtml;
+            
+            // Stats
+            document.getElementById('moisCotises').innerText = data.mois_cotises;
+            document.getElementById('totalPaye').innerHTML = data.total_paye + ' FCFA';
+            document.getElementById('resteAPayer').innerHTML = data.reste_a_payer + ' FCFA';
+            
+            // Prochain paiement
+            let prochain = new Date(data.prochain_paiement);
+            document.getElementById('prochainPaiement').innerHTML = prochain.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            
+            // Infos perso
+            document.getElementById('telephone').innerText = data.telephone;
+            document.getElementById('dateInscription').innerText = new Date(data.date_inscription).toLocaleDateString('fr-FR');
+            
+            let adhesionHtml = data.adhesion_statut === 'paye' ? 
+                '<span class="text-success">✅ Payée (4000 FCFA)</span>' : 
+                '<span class="text-danger">❌ Non payée</span>';
+            document.getElementById('adhesionStatut').innerHTML = adhesionHtml;
+        });
+}        
+function chargerHistorique() {
+    fetch('/api/membre/historique')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            data.forEach(h => {
+                // Si période multiple (12 mois), afficher la plage
+                let periode = h.periode;
+                let pdfBtn = h.paye ? `<button class="btn btn-sm btn-pdf" onclick="telechargerRecu(${h.id})"><i class="fas fa-file-pdf"></i></button>` : '';
+                
+                html += `<tr>
+                    <td><strong>${periode}</strong></td>
+                    <td>${h.montant} FCFA</td class="text-success">
+                    <td class="${h.paye ? 'text-success' : 'text-danger'}">${h.date_paiement ? new Date(h.date_paiement).toLocaleDateString('fr-FR') : '-'}${h.paye ? ' ✅ Payé' : ' ❌ Impayé'}</td>
+                    <td>${pdfBtn}</td>
+                </tr>`;
+            });
+            document.getElementById('historique').innerHTML = html;
+        });
+}
+        
+function telechargerRecu(id) {
+    fetch(`/api/membre/reçu/${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                // Créer le contenu HTML du reçu
+                const element = document.createElement('div');
+                element.innerHTML = `
+                    <div style="padding: 30px; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h2 style="color: #1a2a6c;">MediLogic-M_CNSS_DML</h2>
+                            <h3 style="color: #b21f1f;">Reçu de paiement</h3>
+                            <p>CNSS du Maritime Lacs</p>
+                        </div>
+                        
+                        <div style="border-top: 2px solid #333; border-bottom: 2px solid #333; padding: 15px 0; margin-bottom: 20px;">
+                            <p><strong>👤 Membre :</strong> ${data.nom}</p>
+                            <p><strong>📱 Téléphone :</strong> ${data.telephone}</p>
+                            <p><strong>📅 Date du paiement :</strong> ${new Date(data.date).toLocaleDateString('fr-FR')}</p>
+                            <p><strong>💰 Montant payé :</strong> <span style="font-size: 18px; color: #27ae60;">${data.montant} FCFA</span></p>
+                        </div>
+                        
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <p><strong>📆 Période couverte :</strong> ${data.periode}</p>
+                            <p><strong>💵 Cotisation mensuelle :</strong> 1000 FCFA</p>
+                            <p><strong>✓ Statut :</strong> <span style="color: #27ae60;">Payé ✅</span></p>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+                            <p>Merci pour votre confiance</p>
+                            <p>MediLogic-M_CNSS_DML - Gestionnaire de mutuelle</p>
+                            <p>Ce document fait office de reçu officiel</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Générer le PDF
+                html2pdf().from(element).set({
+                    margin: [0.5, 0.5, 0.5, 0.5],
+                    filename: `recu_${data.periode.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, letterRendering: true },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                }).save();
+            } else {
+                alert('❌ Erreur lors de la génération du reçu');
+            }
+        });
+}
+        
+        function ouvrirWhatsApp() {
+            let tel = membreData.telephone;
+            let annee = new Date().getFullYear();
+            let message = `Bonjour ${membreData.nom}, je consulte mon espace MediLogic. Mon statut est: ${membreData.statut}. Reste à payer: ${membreData.reste_a_payer} FCFA. Merci!`;
+            let url = `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        }
+        
+        function afficherUser() {
+            fetch('/api/session').then(res => res.json()).then(data => {
+                if(data.logged_in) {
+                    document.getElementById('userInfo').innerHTML = `👤 ${data.nom}`;
+                }
+            });
+        }
+        
+        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        
+        afficherUser();
+        chargerDashboard();
+        chargerHistorique();
+    </script>
+</body>
+</html>

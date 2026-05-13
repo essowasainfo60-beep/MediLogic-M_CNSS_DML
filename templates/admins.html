@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic-M_CNSS_DML - Administrateurs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb4d); }
+        .sidebar .nav-link { color: white; }
+        .sidebar .nav-link:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0 sidebar">
+                <div class="p-3 text-center"><h4 class="text-white">📊 MediLogic-M_CNSS_DML</h4><hr class="bg-light"></div>
+                <nav class="nav flex-column">
+                    <a class="nav-link py-3 px-4" href="/"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link py-3 px-4" href="/membres"><i class="fas fa-users me-2"></i> Membres</a>
+                    <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
+                    <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
+                    <a class="nav-link py-3 px-4" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                    <a class="nav-link py-3 px-4" href="/admins"><i class="fas fa-user-shield me-2"></i> Administrateurs</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-user-shield me-2"></i>Gestion des administrateurs</h1>
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="userInfo"></div>
+                        <button class="btn btn-danger btn-sm" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">➕ Ajouter un administrateur</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-2"><input type="text" id="adminUsername" class="form-control" placeholder="Nom d'utilisateur"></div>
+                            <div class="col-md-4 mb-2"><input type="text" id="adminNomComplet" class="form-control" placeholder="Nom complet"></div>
+                            <div class="col-md-4 mb-2"><input type="password" id="adminPassword" class="form-control" placeholder="Mot de passe" value="admin@123"></div>
+                            <div class="col-md-4 mb-2"><button class="btn btn-success w-100" onclick="ajouterAdmin()"><i class="fas fa-plus"></i> Ajouter</button></div>
+                        </div>
+                        <div id="message" class="mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">📋 Liste des administrateurs</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead><tr><th>ID</th><th>Nom d'utilisateur</th><th>Super Admin</th><th>Action</th></tr></thead>
+                                <tbody id="listeAdmins"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let isSuperAdmin = false;
+        
+        function afficherUser() {
+            fetch('/api/session').then(res => res.json()).then(data => {
+                if(data.logged_in) {
+                    isSuperAdmin = data.is_super_admin;
+                    let roleIcon = data.is_super_admin ? '👑' : '👤';
+                    document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${data.is_super_admin ? 'Super Admin' : 'Admin'})`;
+                    
+                    // Cacher le menu si pas super admin (le lien est déjà caché, mais on cache aussi le formulaire)
+                    if(!data.is_super_admin) {
+                        document.querySelector('.card-header.bg-primary').style.display = 'none';
+                        document.querySelectorAll('.btn-danger').forEach(btn => btn.style.display = 'none');
+                    }
+                }
+            });
+        }
+        
+function chargerAdmins() {
+    fetch('/api/admins')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            data.forEach(a => {
+                let isSuper = a.is_super_admin ? '<span class="text-success">✅ Oui</span>' : '<span class="text-muted">❌ Non</span>';
+                let deleteBtn = !a.is_super_admin && isSuperAdmin ? 
+                    `<button class="btn btn-danger btn-sm" onclick="supprimerAdmin(${a.id})"><i class="fas fa-trash"></i></button>` : 
+                    '-';
+                html += `<tr>
+                    <td>${a.id}</td>
+                    <td>${a.username}</td>
+                    <td>${a.nom_complet || a.username}</td>
+                    <td>${isSuper}</td>
+                    <td>${deleteBtn}</td>
+                </tr>`;
+            });
+            document.getElementById('listeAdmins').innerHTML = html;
+        });
+}        
+function ajouterAdmin() {
+    let username = document.getElementById('adminUsername').value;
+    let nomComplet = document.getElementById('adminNomComplet').value;
+    let password = document.getElementById('adminPassword').value;
+    
+    if(!username) {
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">Nom d\'utilisateur requis</div>';
+        return;
+    }
+    
+    // Si nom_complet est vide, on utilise username
+    if(!nomComplet) {
+        nomComplet = username;
+    }
+    
+    fetch('/api/admins', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: username, 
+            nom_complet: nomComplet,
+            password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminNomComplet').value = '';
+            chargerAdmins();
+            setTimeout(() => document.getElementById('message').innerHTML = '', 3000);
+        } else {
+            document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+        }
+    });
+}        
+        function supprimerAdmin(id) {
+            if(confirm('Supprimer cet administrateur ?')) {
+                fetch(`/api/admins/${id}`, {method: 'DELETE'})
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            chargerAdmins();
+                        } else {
+                            alert('❌ ' + data.message);
+                        }
+                    });
+            }
+        }
+        
+        function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }
+        
+        afficherUser();
+        chargerAdmins();
+    </script>
+</body>
+</html>

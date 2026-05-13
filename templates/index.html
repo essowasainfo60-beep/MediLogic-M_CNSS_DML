@@ -34,6 +34,7 @@
                     <a class="nav-link py-3 px-4" href="/cotisations"><i class="fas fa-money-bill me-2"></i> Cotisations</a>
                     <a class="nav-link py-3 px-4" href="/caisse"><i class="fas fa-box me-2"></i> Caisse</a>
                     <a class="nav-link py-3 px-4" href="/historique"><i class="fas fa-history me-2"></i> Historique</a>
+                    <a class="nav-link py-3 px-4" href="/admins" id="menuAdmins"><i class="fas fa-user-shield me-2"></i> Administrateurs</a>
                 </nav>
             </div>
             
@@ -68,17 +69,24 @@
     <script>
         let userRole = '';
         
-        function afficherUser() {
-            fetch('/api/session')
-                .then(res => res.json())
-                .then(data => {
-                    if(data.logged_in) {
-                        userRole = data.role;
-                        let roleIcon = data.role === 'admin' ? '👑' : '👤';
-                        document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${data.role === 'admin' ? 'Admin' : 'Membre'})`;
-                    }
-                });
-        }
+function afficherUser() {
+    fetch('/api/session')
+        .then(res => res.json())
+        .then(data => {
+            if(data.logged_in) {
+                userRole = data.role;
+                let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '👤') : '👤';
+                let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Admin') : 'Membre';
+                document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${roleText})`;
+                
+                // Cacher le menu Administrateurs si ce n'est pas un super admin
+                if(data.role === 'admin' && !data.is_super_admin) {
+                    let menuAdmins = document.querySelector('a[href="/admins"]');
+                    if(menuAdmins) menuAdmins.style.display = 'none';
+                }
+            }
+        });
+}
         
         function chargerStats() {
             fetch('/api/stats')

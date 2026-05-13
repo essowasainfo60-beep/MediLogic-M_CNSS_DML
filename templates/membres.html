@@ -78,6 +78,7 @@
                         <div id="userInfo"></div>
                         <button class="btn btn-primary btn-sm no-print" onclick="window.print()"><i class="fas fa-print"></i> Imprimer PDF</button>
                         <button class="btn btn-danger btn-sm no-print" onclick="deconnexion()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+                        <button class="btn btn-sm btn-info" onclick="modifierDateMembre(${m.id})"><i class="fas fa-calendar-alt"></i></button>
                     </div>
                 </div>
                 
@@ -89,6 +90,7 @@
                             <div class="col-md-4 mb-2"><input type="text" id="nom" class="form-control" placeholder="Nom complet"></div>
                             <div class="col-md-3 mb-2"><input type="tel" id="telephone" class="form-control" placeholder="Téléphone (ex: 90123456)"></div>
                             <div class="col-md-3 mb-2"><input type="number" id="fraisAdhesion" class="form-control" placeholder="Frais adhésion (4000)" value="4000"></div>
+                            <div class="col-md-2 mb-2"><input type="date" id="dateInscription" class="form-control" value="2026-01-01"></div>
                             <div class="col-md-2 mb-2"><button class="btn btn-success w-100 admin-only" id="btnAjouter" onclick="ajouterMembre()"><i class="fas fa-save"></i> Enregistrer</button></div>
                         </div>
                         <div id="message" class="mt-2"></div>
@@ -134,48 +136,51 @@
             });
         }
         
-        function chargerMembres() {
-            fetch('/api/membres').then(res => res.json()).then(data => {
-                let html = '';
-                data.forEach(m => {
-                    let adhesionHtml = '';
-                    if(m.adhesion_statut === 'payé') {
-                        adhesionHtml = '<span class="text-success">✅ Payé</span>';
-                    } else if(m.adhesion_statut === 'partiel') {
-                        adhesionHtml = `<span class="text-warning">🟡 Partiel (${m.frais_adhesion_paye}/4000)</span>
-                                        <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer reste</button>`;
-                    } else {
-                        adhesionHtml = `<span class="text-danger">❌ Impayé</span>
-                                        <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer 4000</button>`;
-                    }
-                    
-                    html += `<tr>
-                        <td>${m.id}</td>
-                        <td>${m.nom}</td>
-                        <td>${m.telephone}</td>
-                        <td id="adhesion-${m.id}">${adhesionHtml}</td>
-                        <td id="statut-${m.id}">Chargement...</td>
-                        ${userRole === 'admin' ? `<td class="no-print"><button class="btn btn-danger btn-sm admin-only" onclick="supprimerMembre(${m.id})"><i class="fas fa-trash"></i></button></td>` : '<td class="no-print"></td>'}
-                    </tr>`;
-                    
-                    // Charger statut cotisation
-                    fetch(`/api/membre/statut/${m.id}`).then(res => res.json()).then(statut => {
-                        let statutHtml = statut.actuel === 'À jour' ? '<span class="text-success">✅ À jour</span>' : `<span class="text-danger">❌ En retard (${statut.mois_retard} mois)</span>`;
-                        document.getElementById(`statut-${m.id}`).innerHTML = statutHtml;
-                    });
+function chargerMembres() {
+    fetch('/api/membres')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            data.forEach(m => {
+                // Utiliser les bonnes clés
+                let adhesionHtml = '';
+                if(m.adhesion_statut === 'payé') {
+                    adhesionHtml = '<span class="text-success">✅ Payé</span>';
+                } else if(m.adhesion_statut === 'partiel') {
+                    adhesionHtml = `<span class="text-warning">🟡 Partiel (${m.frais_adhesion_paye}/4000)</span>
+                                    <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer reste</button>`;
+                } else {
+                    adhesionHtml = `<span class="text-danger">❌ Impayé</span>
+                                    <button class="btn btn-sm btn-warning ms-2 no-print" onclick="payerAdhesion(${m.id})">Payer 4000</button>`;
+                }
+                
+                html += `<tr>
+                    <td>${m.id}</td>
+                    <td>${m.nom}</td class="text-success">
+                    <td>${m.telephone}</td class="text-success">
+                    <td id="adhesion-${m.id}">${adhesionHtml}</td class="text-success">
+                    <td id="statut-${m.id}">Chargement...</td class="text-success">
+                    ${userRole === 'admin' ? `<td class="no-print"><button class="btn btn-danger btn-sm admin-only" onclick="supprimerMembre(${m.id})"><i class="fas fa-trash"></i></button></td>` : '<td class="no-print"><tr>'}
+                </tr>`;
+                
+                fetch(`/api/membre/statut/${m.id}`).then(res => res.json()).then(statut => {
+                    let statutHtml = statut.actuel === 'À jour' ? '<span class="text-success">✅ À jour</span>' : `<span class="text-danger">❌ En retard (${statut.mois_retard} mois)</span>`;
+                    document.getElementById(`statut-${m.id}`).innerHTML = statutHtml;
                 });
-                document.getElementById('listeMembres').innerHTML = html;
             });
-        }
-        
+            document.getElementById('listeMembres').innerHTML = html;
+        });
+}
+
         function ajouterMembre() {
             let btn = document.getElementById('btnAjouter');
             let nom = document.getElementById('nom').value;
             let telephone = document.getElementById('telephone').value;
             let fraisAdhesion = document.getElementById('fraisAdhesion').value;
+            let dateInscription = document.getElementById('dateInscription').value;
             if(!nom || !telephone) { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Remplissez tous les champs</div>'; return; }
             btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '⏳ Enregistrement...';
-            fetch('/api/membres', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nom, telephone, frais_adhesion: parseInt(fraisAdhesion)}) })
+            fetch('/api/membres', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nom, telephone, frais_adhesion: parseInt(fraisAdhesion), date_inscription: dateInscription}) })
             .then(res => res.json()).then(data => {
                 if(data.success) { document.getElementById('message').innerHTML = '<div class="alert alert-success">✅ Membre ajouté !</div>'; document.getElementById('nom').value = ''; document.getElementById('telephone').value = ''; chargerMembres(); }
                 else { document.getElementById('message').innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>'; }
@@ -183,25 +188,44 @@
             }).catch(() => { document.getElementById('message').innerHTML = '<div class="alert alert-danger">Erreur</div>'; btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer'; });
         }
         
-        function payerAdhesion(id) {
-            let montant = prompt("Montant à payer pour l'adhésion:", "4000");
-            if(montant && !isNaN(montant) && parseInt(montant) > 0) {
-                fetch('/api/payer_adhesion', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id_membre: id, montant: parseInt(montant)})
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success) {
-                        alert('✅ ' + data.message);
-                        chargerMembres();
-                    } else {
-                        alert('❌ ' + data.message);
-                    }
-                });
+function payerAdhesion(id) {
+    let montant = prompt("Montant à payer pour l'adhésion:", "4000");
+    if(montant && !isNaN(montant) && parseInt(montant) > 0) {
+        fetch('/api/payer_adhesion', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id_membre: id, montant: parseInt(montant)})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert('✅ ' + data.message);
+                chargerMembres();  // ← ICI : recharge la liste
+            } else {
+                alert('❌ ' + data.message);
             }
-        }
+        });
+    }
+}
+function modifierDateMembre(id) {
+    let nouvelleDate = prompt("Entrez la nouvelle date d'inscription (YYYY-MM-DD):", "2026-01-01");
+    if(nouvelleDate) {
+        fetch(`/api/membres/${id}/date`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({date_inscription: nouvelleDate})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert('✅ Date modifiée !');
+                chargerMembres();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        });
+    }
+}
         
         function supprimerMembre(id) { if(confirm('Supprimer ce membre ?')) { fetch(`/api/membres/${id}`, {method: 'DELETE'}).then(() => chargerMembres()); } }
         function deconnexion() { fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); }

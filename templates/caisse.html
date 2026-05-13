@@ -49,8 +49,28 @@
     <script>
         let userRole = '';
         
-        function afficherUser() { fetch('/api/session').then(res => res.json()).then(data => { if(data.logged_in) { userRole = data.role; document.getElementById('userInfo').innerHTML = `${data.role === 'admin' ? '👑' : '👤'} ${data.nom}`; if(data.role !== 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none'); } }); }
-        
+function afficherUser() {
+    fetch('/api/session')
+        .then(res => res.json())
+        .then(data => {
+            if(data.logged_in) {
+                let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '👤') : '👤';
+                let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Admin') : 'Membre';
+                document.getElementById('userInfo').innerHTML = `${roleIcon} ${data.nom} (${roleText})`;
+                
+                // Cacher le menu Administrateurs si ce n'est pas un super admin
+                if(data.role === 'admin' && !data.is_super_admin) {
+                    let menuAdmins = document.querySelector('a[href="/admins"]');
+                    if(menuAdmins) menuAdmins.style.display = 'none';
+                }
+                
+                // Optionnel : cacher les boutons admin pour les membres
+                if(data.role !== 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                }
+            }
+        });
+}        
         function chargerSolde() { fetch('/api/caisse/solde').then(res => res.json()).then(data => document.getElementById('solde').innerText = data.solde + ' FCFA'); }
         
         function chargerOperations() { fetch('/api/caisse/operations').then(res => res.json()).then(data => { let html = ''; data.forEach(op => { html += `<tr><td>${new Date(op.date_operation).toLocaleString()}</td><td class="${op.type === 'entree' ? 'text-success' : 'text-danger'}">${op.type === 'entree' ? '⬆️ Entrée' : '⬇️ Sortie'}</td><td>${op.montant} FCFA</td><td>${op.motif || '-'}</td><td>${op.effectue_par || '-'}</td></tr>`; }); document.getElementById('operations').innerHTML = html; }); }

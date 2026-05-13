@@ -121,8 +121,9 @@ def api_admin_login():
     
     if admin:
         session['user_id'] = 0
-        session['user_nom'] = 'Administrateur'
+        session['user_nom'] = admin.get('nom_complet') or username  # ← Utiliser nom_complet
         session['user_role'] = 'admin'
+        session['is_super_admin'] = admin.get('is_super_admin', False)
         return jsonify({'success': True})
     return jsonify({'success': False})
 
@@ -142,7 +143,13 @@ def api_membre_login():
         session['user_id'] = membre['id']
         session['user_nom'] = membre['nom']
         session['user_role'] = membre.get('role', 'membre')
-        return jsonify({'success': True, 'nom': membre['nom']})
+        
+        # Rediriger vers le bon dashboard selon le rôle
+        if session['user_role'] == 'admin':
+            return jsonify({'success': True, 'nom': membre['nom'], 'role': 'admin', 'redirect': '/'})
+        else:
+            return jsonify({'success': True, 'nom': membre['nom'], 'role': 'membre', 'redirect': '/membre'})
+    
     return jsonify({'success': False, 'message': 'Numéro non trouvé'})
 
 @app.route('/api/logout', methods=['POST'])
@@ -156,7 +163,8 @@ def get_session():
         return jsonify({
             'logged_in': True,
             'nom': session.get('user_nom'),
-            'role': session.get('user_role')
+            'role': session.get('user_role'),
+            'is_super_admin': session.get('is_super_admin', False)
         })
     return jsonify({'logged_in': False})
 
@@ -203,10 +211,21 @@ def get_membres():
     conn = get_db()
     cur = conn.cursor()
     
-    if session.get('user_role') == 'membre':
-        cur.execute("SELECT id, nom, telephone, adhesion_statut, frais_adhesion_reste FROM membres WHERE role != 'admin'")
+    # Pour admin : récupérer toutes les colonnes
+    if session.get('user_role') == 'admin':
+        cur.execute("""
+            SELECT id, nom, telephone, date_inscription, 
+                   adhesion_statut, frais_adhesion_paye, frais_adhesion_reste,
+                   role
+            FROM membres 
+            ORDER BY id DESC
+        """)
     else:
-        cur.execute("SELECT * FROM membres ORDER BY id DESC")
+        cur.execute("""
+            SELECT id, nom, telephone, adhesion_statut, frais_adhesion_reste 
+            FROM membres 
+            WHERE role != 'admin'
+        """)
     
     membres = cur.fetchall()
     cur.close()
@@ -219,24 +238,25 @@ def add_membre():
         return jsonify({'success': False, 'message': 'Permission refusée'}), 403
     
     data = request.json
+    nom = data.get('nom')
+    telephone = data.get('telephone')
     frais = data.get('frais_adhesion', 4000)
+    date_inscription = data.get('date_inscription', datetime.now().strftime('%Y-%m-%d'))
     
     conn = get_db()
     cur = conn.cursor()
     
-    # Vérifier si existe
-    cur.execute("SELECT id FROM membres WHERE telephone = %s", (data['telephone'],))
+    cur.execute("SELECT id FROM membres WHERE telephone = %s", (telephone,))
     if cur.fetchone():
         cur.close()
         conn.close()
         return jsonify({'success': False, 'message': 'Ce numéro existe déjà'})
     
     cur.execute("""
-        INSERT INTO membres (nom, telephone, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut)
-        VALUES (%s, %s, %s, 0, %s, 'impaye')
+        INSERT INTO membres (nom, telephone, date_inscription, frais_adhesion, frais_adhesion_paye, frais_adhesion_reste, adhesion_statut, role)
+        VALUES (%s, %s, %s, %s, 0, %s, 'impaye', 'membre')
         RETURNING id
-    """, (data['nom'], data['telephone'], frais, frais))
-    membre = cur.fetchone()
+    """, (nom, telephone, date_inscription, frais, frais))
     
     conn.commit()
     cur.close()
@@ -318,30 +338,43 @@ def add_cotisation():
     
     data = request.json
     id_membre = data['id_membre']
-    periode = data['periode']  # 1, 3, 6, 12 mois
-    mois_debut = data['mois_debut']  # format: '2026-06'
+    periode = data['periode']
+    mois_debut = data['mois_debut']
     montant_unitaire = data.get('montant_unitaire', 1000)
-    enregistre_par = data['enregistre_par']
     
-    # Convertir la date au bon format (YYYY-MM-DD)
+    # Utiliser le nom de l'admin connecté automatiquement
+    enregistre_par = session.get('user_nom', 'admin')
+    
     debut = datetime.strptime(mois_debut + '-01', '%Y-%m-%d')
-    
-    # Calculer la date de fin
     mois_fin = debut + timedelta(days=(periode * 30))
+    # Ajuster la date de fin au dernier jour du mois
+    if mois_fin.month != debut.month + periode:
+        mois_fin = mois_fin.replace(day=1) - timedelta(days=1)
     montant_total = periode * montant_unitaire
     
     conn = get_db()
     cur = conn.cursor()
     
-    # Vérifier doublon (format correct)
+    # Vérifier si la période chevauche un paiement existant
     cur.execute("""
-        SELECT id FROM cotisations 
-        WHERE id_membre = %s AND mois_debut = %s
-    """, (id_membre, debut))
-    if cur.fetchone():
+        SELECT id, mois_debut, mois_fin, nombre_mois 
+        FROM cotisations 
+        WHERE id_membre = %s 
+        AND (
+            (mois_debut <= %s AND mois_fin >= %s) OR
+            (mois_debut BETWEEN %s AND %s) OR
+            (mois_fin BETWEEN %s AND %s)
+        )
+    """, (id_membre, mois_fin, debut, debut, mois_fin, debut, mois_fin))
+    
+    existant = cur.fetchone()
+    if existant:
         cur.close()
         conn.close()
-        return jsonify({'success': False, 'message': 'Cette période a déjà été payée'})
+        return jsonify({
+            'success': False, 
+            'message': f'⚠️ Période déjà couverte ! Déjà payé du {existant["mois_debut"].strftime("%B %Y")} au {existant["mois_fin"].strftime("%B %Y")}'
+        })
     
     # Enregistrer cotisation
     cur.execute("""
@@ -498,8 +531,7 @@ def payer_adhesion():
     conn = get_db()
     cur = conn.cursor()
     
-    # Vérifier le membre
-    cur.execute("SELECT nom, frais_adhesion_reste FROM membres WHERE id = %s", (id_membre,))
+    cur.execute("SELECT nom, adhesion_statut, frais_adhesion_paye, frais_adhesion_reste FROM membres WHERE id = %s", (id_membre,))
     membre = cur.fetchone()
     
     if not membre:
@@ -507,42 +539,336 @@ def payer_adhesion():
         conn.close()
         return jsonify({'success': False, 'message': 'Membre non trouvé'})
     
-    reste = membre['frais_adhesion_reste']
-    
-    if reste <= 0:
+    if membre['adhesion_statut'] == 'payé':
         cur.close()
         conn.close()
         return jsonify({'success': False, 'message': 'Adhésion déjà payée'})
     
-    # Mettre à jour
-    nouveau_paye = 4000 - reste + montant if reste < 4000 else montant
-    nouveau_reste = 4000 - nouveau_paye
-    statut = 'payé' if nouveau_reste <= 0 else 'partiel'
+    reste_actuel = membre['frais_adhesion_reste']
+    
+    # Empêcher de payer plus que le reste dû
+    if montant > reste_actuel:
+        cur.close()
+        conn.close()
+        return jsonify({'success': False, 'message': f'Montant trop élevé. Reste à payer: {reste_actuel} FCFA'})
+    
+    nouveau_paye = membre['frais_adhesion_paye'] + montant
+    nouveau_reste = reste_actuel - montant
+    nouveau_statut = 'payé' if nouveau_reste <= 0 else ('partiel' if nouveau_paye > 0 else 'impaye')
     
     cur.execute("""
         UPDATE membres 
-        SET frais_adhesion_paye = %s, 
-            frais_adhesion_reste = %s, 
-            adhesion_statut = %s
+        SET frais_adhesion_paye = %s, frais_adhesion_reste = %s, adhesion_statut = %s
         WHERE id = %s
-    """, (nouveau_paye, nouveau_reste, statut, id_membre))
-    
-    # Enregistrer l'opération en caisse
-    cur.execute("SELECT COALESCE(solde_apres, 0) FROM caisse ORDER BY id DESC LIMIT 1")
-    solde = cur.fetchone()
-    solde_actuel = solde['coalesce'] if solde else 0
-    nouveau_solde = solde_actuel + montant
-    
-    cur.execute("""
-        INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
-        VALUES ('entree', %s, %s, %s, %s, %s)
-    """, (montant, f"Adhésion - {membre['nom']}", str(id_membre), nouveau_solde, session.get('user_nom')))
+    """, (nouveau_paye, nouveau_reste, nouveau_statut, id_membre))
     
     conn.commit()
     cur.close()
     conn.close()
     
-    return jsonify({'success': True, 'message': f'Adhésion payée: {montant} FCFA'})
+    return jsonify({
+        'success': True,
+        'message': f'{montant} FCFA enregistré pour l\'adhésion',
+        'adhesion_statut': nouveau_statut,
+        'paye': nouveau_paye,
+        'reste': nouveau_reste
+    })
+
+# ==================== ROUTES MEMBRE ====================
+@app.route('/membre')
+def membre_dashboard():
+    if 'user_id' not in session or session.get('user_role') != 'membre':
+        return redirect(url_for('login'))
+    return render_template('membre_dashboard.html')
+
+@app.route('/api/membre/dashboard', methods=['GET'])
+def api_membre_dashboard():
+    if session.get('user_role') != 'membre':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    id_membre = session['user_id']
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Récupérer infos membre avec adhesion_statut
+    cur.execute("""
+        SELECT nom, telephone, date_inscription, 
+               adhesion_statut, frais_adhesion_paye, frais_adhesion_reste
+        FROM membres 
+        WHERE id = %s
+    """, (id_membre,))
+    membre = cur.fetchone()
+    
+    if not membre:
+        cur.close()
+        conn.close()
+        return jsonify({'error': 'Membre non trouvé'}), 404
+    
+    # Récupérer le total payé et mois cotisés
+    cur.execute("SELECT COALESCE(SUM(montant_total), 0) as total FROM cotisations WHERE id_membre = %s", (id_membre,))
+    total_paye = cur.fetchone()['total'] or 0
+    
+    cur.execute("SELECT COALESCE(SUM(nombre_mois), 0) as mois FROM cotisations WHERE id_membre = %s", (id_membre,))
+    mois_cotises = cur.fetchone()['mois'] or 0
+    
+    # Calculer les mois attendus et le retard
+    annee = datetime.now().year
+    mois_courant = datetime.now().month
+    mois_attendus = mois_courant
+    reste_a_payer = max(0, (mois_attendus - mois_cotises) * 1000)
+    statut = 'À jour' if reste_a_payer == 0 else 'En retard'
+    mois_retard = max(0, mois_attendus - mois_cotises)
+    
+    # ========== PROCHAIN PAIEMENT INTELLIGENT ==========
+    cur.execute("""
+        SELECT MAX(mois_fin) as derniere_periode
+        FROM cotisations 
+        WHERE id_membre = %s
+    """, (id_membre,))
+    derniere = cur.fetchone()
+    
+    if derniere and derniere['derniere_periode']:
+        derniere_date = derniere['derniere_periode']
+        # Prochain mois après la fin de la dernière période
+        prochain = derniere_date.replace(day=1)
+        if prochain.month == 12:
+            prochain = prochain.replace(year=prochain.year + 1, month=1)
+        else:
+            prochain = prochain.replace(month=prochain.month + 1)
+    else:
+        # Jamais payé, prochain paiement = janvier de l'année courante
+        prochain = datetime(annee, 1, 1)
+    
+    cur.close()
+    conn.close()
+    
+    # Normaliser l'affichage de l'adhésion
+    adhesion_statut = membre['adhesion_statut']
+    adhesion_paye = membre['frais_adhesion_paye']
+    adhesion_reste = membre['frais_adhesion_reste']
+    
+    if adhesion_statut == 'payé' or adhesion_reste <= 0:
+        adhesion_affichage = 'paye'
+    elif adhesion_statut == 'partiel':
+        adhesion_affichage = 'partiel'
+    else:
+        adhesion_affichage = 'impaye'
+    
+    return jsonify({
+        'nom': membre['nom'],
+        'telephone': membre['telephone'],
+        'date_inscription': membre['date_inscription'].isoformat() if membre['date_inscription'] else None,
+        'adhesion_statut': adhesion_affichage,
+        'adhesion_paye': adhesion_paye,
+        'adhesion_reste': adhesion_reste,
+        'statut': statut,
+        'mois_retard': mois_retard,
+        'mois_cotises': mois_cotises,
+        'total_paye': total_paye,
+        'reste_a_payer': reste_a_payer,
+        'prochain_paiement': prochain.isoformat()
+    })
+
+@app.route('/api/membre/historique', methods=['GET'])
+def api_membre_historique():
+    if session.get('user_role') != 'membre':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    id_membre = session['user_id']
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT id, nombre_mois, montant_total, date_paiement, enregistre_par,
+               TO_CHAR(mois_debut, 'Month YYYY') as mois_debut_str,
+               TO_CHAR(mois_fin, 'Month YYYY') as mois_fin_str,
+               EXTRACT(YEAR FROM mois_debut) as annee
+        FROM cotisations 
+        WHERE id_membre = %s 
+        ORDER BY date_paiement DESC
+    """, (id_membre,))
+    
+    historique = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    result = []
+    for h in historique:
+        if h['nombre_mois'] == 1:
+            periode = h['mois_debut_str'].strip()
+        else:
+            periode = f"{h['mois_debut_str'].strip()} à {h['mois_fin_str'].strip()} ({h['nombre_mois']} mois)"
+        
+        result.append({
+            'id': h['id'],
+            'periode': periode,
+            'montant': h['montant_total'],
+            'date_paiement': h['date_paiement'].isoformat() if h['date_paiement'] else None,
+            'enregistre_par': h['enregistre_par'],
+            'paye': True
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/membre/reçu/<int:id>', methods=['GET'])
+def api_membre_recu(id):
+    if session.get('user_role') != 'membre':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT c.montant_total, c.date_paiement, c.enregistre_par, c.nombre_mois,
+               c.mois_debut, c.mois_fin,
+               m.nom, m.telephone
+        FROM cotisations c
+        JOIN membres m ON c.id_membre = m.id
+        WHERE c.id = %s AND m.id = %s
+    """, (id, session['user_id']))
+    recu = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if recu:
+        # Formater la période
+        debut = recu['mois_debut'].strftime('%B %Y') if recu['mois_debut'] else '?'
+        fin = recu['mois_fin'].strftime('%B %Y') if recu['mois_fin'] else '?'
+        
+        if recu['nombre_mois'] == 1:
+            periode = debut
+        else:
+            periode = f"{debut} à {fin} ({recu['nombre_mois']} mois)"
+        
+        return jsonify({
+            'success': True,
+            'nom': recu['nom'],
+            'telephone': recu['telephone'],
+            'periode': periode,
+            'montant': recu['montant_total'],
+            'date': recu['date_paiement'].isoformat() if recu['date_paiement'] else None,
+            'enregistre_par': recu['enregistre_par']
+        })
+    return jsonify({'success': False})
+
+@app.route('/api/membres/<int:id>/date', methods=['PUT'])
+def update_membre_date(id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'success': False, 'message': 'Permission refusée'}), 403
+    
+    data = request.json
+    nouvelle_date = data.get('date_inscription')
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE membres SET date_inscription = %s WHERE id = %s", (nouvelle_date, id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': 'Date mise à jour'})
+
+@app.route('/api/debug/adhesion/<int:id_membre>', methods=['GET'])
+def debug_adhesion(id_membre):
+    """Diagnostic - version sans vérification de session"""
+    # Supprime la vérification temporairement
+    # if session.get('user_role') != 'admin':
+    #     return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # 1. Récupérer les données du membre
+    cur.execute("""
+        SELECT id, nom, adhesion_statut, frais_adhesion_paye, frais_adhesion_reste, date_inscription
+        FROM membres 
+        WHERE id = %s
+    """, (id_membre,))
+    membre = cur.fetchone()
+    
+    # 2. Récupérer la session actuelle
+    session_info = {
+        'user_id': session.get('user_id'),
+        'user_role': session.get('user_role'),
+        'user_nom': session.get('user_nom')
+    }
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        'membre_db': membre,
+        'session_info': session_info,
+        'message': 'Diagnostic réussi'
+    })
+
+# ==================== GESTION DES ADMINS ====================
+
+@app.route('/admins')
+def admins_page():
+    if session.get('user_role') != 'admin' or not session.get('is_super_admin', False):
+        return redirect(url_for('index'))
+    return render_template('admins.html')
+
+@app.route('/api/admins', methods=['GET'])
+def get_admins():
+    if session.get('user_role') != 'admin' or not session.get('is_super_admin', False):
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, is_super_admin FROM admin ORDER BY id")
+    admins = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(admins)
+
+@app.route('/api/admins', methods=['POST'])
+def add_admin():
+    if session.get('user_role') != 'admin' or not session.get('is_super_admin', False):
+        return jsonify({'success': False, 'message': 'Accès refusé'}), 403
+    
+    data = request.json
+    username = data.get('username')
+    password = data.get('password', 'admin@123')
+    nom_complet = data.get('nom_complet', username)
+    
+    hash_mdp = hashlib.sha256(password.encode()).hexdigest()
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("INSERT INTO admin (username, password_hash, nom_complet, is_super_admin) VALUES (%s, %s, %s, FALSE)", 
+                    (username, hash_mdp, nom_complet))
+        conn.commit()
+        return jsonify({'success': True, 'message': f'Admin {username} ajouté'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/admins/<int:id>', methods=['DELETE'])
+def delete_admin(id):
+    if session.get('user_role') != 'admin' or not session.get('is_super_admin', False):
+        return jsonify({'success': False, 'message': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Empêcher de supprimer son propre compte
+    cur.execute("SELECT username FROM admin WHERE id = %s", (id,))
+    admin = cur.fetchone()
+    if admin and admin['username'] == session.get('user_nom'):
+        cur.close()
+        conn.close()
+        return jsonify({'success': False, 'message': 'Vous ne pouvez pas supprimer votre propre compte'})
+    
+    cur.execute("DELETE FROM admin WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'success': True})
 
 # ==================== LANCEMENT ====================
 if __name__ == '__main__':
