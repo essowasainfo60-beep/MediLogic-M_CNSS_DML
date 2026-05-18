@@ -161,6 +161,15 @@
             padding: 0.6rem 1rem;
             transition: all 0.3s;
         }
+.badge-don {
+    background: linear-gradient(135deg, #fdbb4d, #f39c12);
+    color: #1a2a6c;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+}
 
         .filter-input:focus {
             border-color: #667eea;
@@ -402,6 +411,9 @@
                     <a class="nav-link" href="/cotisations">
                         <i class="fas fa-money-bill-wave"></i> Cotisations
                     </a>
+                    <a class="nav-link py-3 px-4" href="/dons">
+                        <i class="fas fa-gift me-2"></i> Dons & Legs
+                    </a>
                     <a class="nav-link" href="/caisse">
                         <i class="fas fa-credit-card"></i> Caisse
                     </a>
@@ -635,56 +647,64 @@
                 });
         }
         
-        function afficherTableau(data) {
-            let html = '';
-            if (data.length === 0) {
-                html = `
-                    <tr>
-                        <td colspan="6" class="text-center py-4">
-                            <div class="empty-state">
-                                <i class="fas fa-inbox"></i>
-                                <p class="mb-0 text-muted">Aucune transaction trouvée</p>
-                                <small>Ajustez vos filtres pour voir plus de résultats</small>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+function afficherTableau(data) {
+    let html = '';
+    if (data.length === 0) {
+        html = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p class="mb-0 text-muted">Aucune transaction trouvée</p>
+                        <small>Ajustez vos filtres pour voir plus de résultats</small>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        data.forEach((h, index) => {
+            let typeBadge = '';
+            
+            if(h.type_paiement === 'adhesion') {
+                typeBadge = '<span class="badge-adhesion"><i class="fas fa-hand-holding-usd me-1"></i>Adhésion</span>';
+            } else if(h.type_paiement === 'don') {
+                typeBadge = '<span class="badge-don"><i class="fas fa-gift me-1"></i>Don / Legs</span>';
             } else {
-                data.forEach((h, index) => {
-                    let typeBadge = h.type_paiement === 'adhesion' ? 
-                        '<span class="badge-adhesion"><i class="fas fa-hand-holding-usd me-1"></i>Adhésion</span>' : 
-                        '<span class="badge-cotisation"><i class="fas fa-calendar-check me-1"></i>Cotisation</span>';
-                    
-                    let periode = '';
-                    if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
-                        let debut = new Date(h.mois_debut);
-                        let fin = new Date(h.mois_fin);
-                        periode = `${debut.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - ${fin.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} <span class="text-muted">(${h.nombre_mois} mois)</span>`;
-                    } else if(h.type_paiement === 'adhesion') {
-                        periode = '<span class="text-muted">Paiement unique d\'adhésion</span>';
-                    } else {
-                        periode = '-';
-                    }
-                    
-                    html += `
-                        <tr style="animation: fadeInUp 0.3s ease-out ${index * 0.02}s forwards; opacity: 0;">
-                            <td class="text-nowrap">
-                                <i class="far fa-clock me-1 text-muted"></i>${formatDateTime(h.date_paiement)}
-                            </td>
-                            <td>
-                                <strong>${h.membre_nom}</strong><br>
-                                ${typeBadge}
-                            </td>
-                            <td>${h.telephone || '-'}</td>
-                            <td>${periode}</td>
-                            <td class="fw-bold text-success">${h.montant.toLocaleString()} FCFA</td>
-                            <td><i class="fas fa-user-check me-1 text-muted"></i>${h.enregistre_par || '-'}</td>
-                        </tr>
-                    `;
-                });
+                typeBadge = '<span class="badge-cotisation"><i class="fas fa-calendar-check me-1"></i>Cotisation</span>';
             }
-            document.getElementById('historique').innerHTML = html;
-        }
+            
+            let periode = '';
+            if(h.type_paiement === 'cotisation' && h.mois_debut && h.mois_fin) {
+                let debut = new Date(h.mois_debut);
+                let fin = new Date(h.mois_fin);
+                periode = `${debut.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - ${fin.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} <span class="text-muted">(${h.nombre_mois} mois)</span>`;
+            } else if(h.type_paiement === 'adhesion') {
+                periode = '<span class="text-muted">Paiement unique d\'adhésion</span>';
+            } else if(h.type_paiement === 'don') {
+                periode = '<span class="text-muted">Don / Legs - Contribution exceptionnelle</span>';
+            } else {
+                periode = '-';
+            }
+            
+            html += `
+                <tr style="animation: fadeInUp 0.3s ease-out ${index * 0.02}s forwards; opacity: 0;">
+                    <td class="text-nowrap">
+                        <i class="far fa-clock me-1 text-muted"></i>${formatDateTime(h.date_paiement)}
+                    </td>
+                    <td>
+                        <strong>${h.membre_nom}</strong><br>
+                        ${typeBadge}
+                    </td>
+                    <td>${h.telephone || '-'}</td>
+                    <td>${periode}</td>
+                    <td class="fw-bold text-success">${h.montant.toLocaleString()} FCFA</td>
+                    <td><i class="fas fa-user-check me-1 text-muted"></i>${h.enregistre_par || '-'}</td>
+                </tr>
+            `;
+        });
+    }
+    document.getElementById('historique').innerHTML = html;
+}
         
         function filtrer() {
             let nom = document.getElementById('searchNom').value.toLowerCase().trim();

@@ -448,6 +448,21 @@ def get_historique():
             WHERE ca.motif LIKE 'Adhésion%' 
             AND m.id = %s
             
+            UNION ALL
+            
+            SELECT 
+                d.id, 
+                d.montant, 
+                d.date_don as date_paiement, 
+                d.enregistre_par,
+                NULL as mois_debut, 
+                NULL as mois_fin, 
+                NULL as nombre_mois,
+                'don' as type_paiement, 
+                d.donateur as membre_nom, 
+                NULL as telephone
+            FROM dons d
+            
             ORDER BY date_paiement DESC
         """, (session['user_id'], session['user_id']))
     else:
@@ -483,7 +498,22 @@ def get_historique():
             JOIN membres m ON ca.source = m.id::text
             WHERE ca.motif LIKE 'Adhésion%'
             
-            ORDER BY date_paiement DESC LIMIT 100
+            UNION ALL
+            
+            SELECT 
+                d.id, 
+                d.montant, 
+                d.date_don as date_paiement, 
+                d.enregistre_par,
+                NULL as mois_debut, 
+                NULL as mois_fin, 
+                NULL as nombre_mois,
+                'don' as type_paiement, 
+                d.donateur as membre_nom, 
+                NULL as telephone
+            FROM dons d
+            
+            ORDER BY date_paiement DESC LIMIT 200
         """)
     
     historique = cur.fetchall()
@@ -956,6 +986,158 @@ def delete_admin(id):
     cur.close()
     conn.close()
     return jsonify({'success': True})
+
+# ==================== DONS & LEGS ====================
+
+@app.route('/dons')
+def dons_page():
+    if 'user_id' not in session or session.get('user_role') != 'admin':
+        return redirect(url_for('login'))
+    return render_template('dons.html')
+
+@app.route('/api/dons/ajouter', methods=['POST'])
+def api_dons_ajouter():
+    if session.get('user_role') != 'admin':
+        return jsonify({'success': False, 'message': 'Permission refusée'}), 403
+    
+    data = request.json
+    donateur = data.get('donateur')
+    type_don = data.get('type')
+    montant = data.get('montant')
+    motif = data.get('motif', '')
+    
+    if not donateur or not montant:
+        return jsonify({'success': False, 'message': 'Donateur et montant requis'})
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Enregistrer le don dans la table dons
+    cur.execute("""
+        INSERT INTO dons (donateur, type, montant, motif, enregistre_par)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
+    """, (donateur, type_don, montant, motif, session.get('user_nom', 'admin')))
+    
+    # Mettre à jour la caisse
+    cur.execute("SELECT COALESCE(solde_apres, 0) FROM caisse ORDER BY id DESC LIMIT 1")
+    solde = cur.fetchone()
+    solde_actuel = solde['coalesce'] if solde else 0
+    nouveau_solde = solde_actuel + montant
+    
+    cur.execute("""
+        INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
+        VALUES ('entree', %s, %s, %s, %s, %s)
+    """, (montant, f"{type_don.upper()} - {donateur}", 'don', nouveau_solde, session.get('user_nom', 'admin')))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': f'{type_don.upper()} de {montant} FCFA enregistré'})
+
+@app.route('/api/dons/liste', methods=['GET'])
+def api_dons_liste():
+    if session.get('user_role') != 'admin':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM dons ORDER BY date_don DESC")
+    dons = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(dons)
+
+@app.route('/api/dons/stats', methods=['GET'])
+def api_dons_stats():
+    if session.get('user_role') != 'admin':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT COALESCE(SUM(montant), 0) as total FROM dons WHERE type = 'don'")
+    total_dons = cur.fetchone()['total']
+    
+    cur.execute("SELECT COALESCE(SUM(montant), 0) as total FROM dons WHERE type = 'legs'")
+    total_legs = cur.fetchone()['total']
+    
+    cur.execute("SELECT COALESCE(SUM(montant), 0) as total FROM dons")
+    total_general = cur.fetchone()['total']
+    
+    cur.execute("SELECT COUNT(*) as nb FROM dons")
+    nombre_total = cur.fetchone()['nb']
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        'total_dons': total_dons,
+        'total_legs': total_legs,
+        'total_general': total_general,
+        'nombre_total': nombre_total
+    })
+
+@app.route('/api/dons/reçu/<int:id>', methods=['GET'])
+def api_dons_recu(id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'error': 'Accès refusé'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM dons WHERE id = %s", (id,))
+    don = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if don:
+        return jsonify({
+            'success': True,
+            'donateur': don['donateur'],
+            'type': don['type'],
+            'montant': don['montant'],
+            'motif': don['motif'],
+            'date': don['date_don']
+        })
+    return jsonify({'success': False})
+
+@app.route('/api/dons/supprimer/<int:id>', methods=['DELETE'])
+def api_dons_supprimer(id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'success': False, 'message': 'Permission refusée'}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Récupérer le don avant suppression
+    cur.execute("SELECT montant, donateur, type FROM dons WHERE id = %s", (id,))
+    don = cur.fetchone()
+    
+    if not don:
+        cur.close()
+        conn.close()
+        return jsonify({'success': False, 'message': 'Don non trouvé'})
+    
+    # Supprimer de la caisse (sortie pour annuler)
+    cur.execute("SELECT COALESCE(solde_apres, 0) FROM caisse ORDER BY id DESC LIMIT 1")
+    solde = cur.fetchone()
+    solde_actuel = solde['coalesce'] if solde else 0
+    nouveau_solde = solde_actuel - don['montant']
+    
+    cur.execute("""
+        INSERT INTO caisse (type, montant, motif, source, solde_apres, effectue_par)
+        VALUES ('sortie', %s, %s, %s, %s, %s)
+    """, (don['montant'], f"ANNULATION {don['type'].upper()} - {don['donateur']}", 'annulation_don', nouveau_solde, session.get('user_nom', 'admin')))
+    
+    # Supprimer le don
+    cur.execute("DELETE FROM dons WHERE id = %s", (id,))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': 'Don supprimé'})
 
 # ==================== LANCEMENT ====================
 if __name__ == '__main__':

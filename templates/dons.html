@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLogic - Dons & Legs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar moderne */
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 1.5rem;
+            margin: 0.3rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            margin-right: 12px;
+        }
+
+        .logo-area {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .logo-area h4 {
+            background: linear-gradient(135deg, #667eea, #fdbb4d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        /* Main content */
+        .main-content {
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e293b, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            border: none;
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-bg-don { background: linear-gradient(135deg, #10b981, #059669); }
+        .card-bg-legs { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .card-bg-total { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .card-bg-count { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .stat-card .card-body {
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .stat-card h6 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .stat-card h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .stat-card .stat-icon {
+            position: absolute;
+            right: 20px;
+            bottom: 15px;
+            font-size: 2.5rem;
+            opacity: 0.2;
+        }
+
+        /* Form Card */
+        .form-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border: none;
+        }
+
+        /* Table Card */
+        .table-card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .card-header-secondary {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border: none;
+        }
+
+        /* Form inputs */
+        .form-control-modern, .form-select-modern {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 0.7rem 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control-modern:focus, .form-select-modern:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 12px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        /* Table styles */
+        .table-custom {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+        }
+
+        .table-custom thead th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        .table-custom tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge-don {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .badge-legs {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .badge-subvention {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Action buttons */
+        .btn-action {
+            padding: 0.3rem 0.7rem;
+            border-radius: 8px;
+            transition: all 0.3s;
+            margin: 0 2px;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+
+        /* Loading state */
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            right: 20px;
+            margin-top: -8px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert-custom {
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                position: sticky;
+                top: 0;
+            }
+            
+            .page-title {
+                font-size: 1.2rem;
+            }
+            
+            .stat-card h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="logo-area">
+                    <i class="fas fa-shield-alt fa-2x" style="background: linear-gradient(135deg, #667eea, #fdbb4d); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    <h4 class="mt-2">MediLogic</h4>
+                    <small style="color: rgba(255,255,255,0.6);">CNSS Maritime Lacs</small>
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="/membres">
+                        <i class="fas fa-users"></i> Membres
+                    </a>
+                    <a class="nav-link" href="/cotisations">
+                        <i class="fas fa-money-bill-wave"></i> Cotisations
+                    </a>
+                    <a class="nav-link active" href="/dons">
+                        <i class="fas fa-gift"></i> Dons & Legs
+                    </a>
+                    <a class="nav-link" href="/caisse">
+                        <i class="fas fa-credit-card"></i> Caisse
+                    </a>
+                    <a class="nav-link" href="/historique">
+                        <i class="fas fa-history"></i> Historique
+                    </a>
+                </nav>
+            </div>
+            
+            <!-- Main content -->
+            <div class="col-md-10 main-content p-4">
+                <!-- Header -->
+                <div class="glass-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="page-title">
+                                <i class="fas fa-gift me-2"></i>Dons & Legs
+                            </h1>
+                            <p class="text-muted mb-0 mt-1">
+                                <i class="fas fa-heart me-1 text-danger"></i>Gérez les dons, legs et subventions
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="d-flex justify-content-md-end align-items-center gap-3">
+                                <div id="userInfo"></div>
+                                <button class="btn btn-logout no-print" onclick="deconnexion()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4" id="statsDons">
+                    <div class="col-md-3 animate-in" style="animation-delay: 0.1s;">
+                        <div class="card stat-card card-bg-don">
+                            <div class="card-body">
+                                <h6><i class="fas fa-gift me-2"></i>TOTAL DONS</h6>
+                                <h2 id="totalDons">- FCFA</h2>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 animate-in" style="animation-delay: 0.2s;">
+                        <div class="card stat-card card-bg-legs">
+                            <div class="card-body">
+                                <h6><i class="fas fa-dove me-2"></i>TOTAL LEGS</h6>
+                                <h2 id="totalLegs">- FCFA</h2>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-dove"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 animate-in" style="animation-delay: 0.3s;">
+                        <div class="card stat-card card-bg-total">
+                            <div class="card-body">
+                                <h6><i class="fas fa-chart-line me-2"></i>TOTAL GÉNÉRAL</h6>
+                                <h2 id="totalGeneral">- FCFA</h2>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 animate-in" style="animation-delay: 0.4s;">
+                        <div class="card stat-card card-bg-count">
+                            <div class="card-body">
+                                <h6><i class="fas fa-calendar-alt me-2"></i>NOMBRE DE DONS</h6>
+                                <h2 id="nbDons">-</h2>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formulaire d'enregistrement -->
+                <div class="form-card animate-in" style="animation-delay: 0.5s;">
+                    <div class="card-header-primary">
+                        <i class="fas fa-plus-circle me-2"></i> Enregistrer un don / legs / subvention
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Donateur / Institution</label>
+                                <input type="text" id="donateur" class="form-control form-control-modern" placeholder="Ex: Fondation X">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Type</label>
+                                <select id="type" class="form-select form-select-modern">
+                                    <option value="don">🎁 Don</option>
+                                    <option value="legs">⚰️ Legs</option>
+                                    <option value="subvention">🏛️ Subvention</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Montant (FCFA)</label>
+                                <input type="number" id="montant" class="form-control form-control-modern" placeholder="Ex: 100000">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Motif (optionnel)</label>
+                                <input type="text" id="motif" class="form-control form-control-modern" placeholder="Ex: Projet santé">
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button class="btn-primary-custom w-100" id="btnEnregistrer" onclick="enregistrerDon()">
+                                    <i class="fas fa-save me-2"></i>Enregistrer
+                                </button>
+                            </div>
+                        </div>
+                        <div id="message" class="mt-3"></div>
+                    </div>
+                </div>
+                
+                <!-- Liste des dons -->
+                <div class="table-card animate-in" style="animation-delay: 0.6s;">
+                    <div class="card-header-secondary d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-list me-2"></i>Historique des dons & legs</span>
+                        <button class="btn btn-sm btn-light" onclick="rafraichir()">
+                            <i class="fas fa-sync-alt me-1"></i> Rafraîchir
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-custom mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><i class="far fa-calendar-alt me-1"></i>Date</th>
+                                        <th><i class="fas fa-user me-1"></i>Donateur</th>
+                                        <th><i class="fas fa-tag me-1"></i>Type</th>
+                                        <th><i class="fas fa-money-bill me-1"></i>Montant</th>
+                                        <th><i class="fas fa-info-circle me-1"></i>Motif</th>
+                                        <th><i class="fas fa-user-check me-1"></i>Enregistré par</th>
+                                        <th><i class="fas fa-cog me-1"></i>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listeDons">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                            <p class="mt-2 text-muted">Chargement des dons...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let userRole = '';
+        
+        function afficherUser() {
+            fetch('/api/session')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.logged_in) {
+                        userRole = data.role;
+                        let roleIcon = data.role === 'admin' ? (data.is_super_admin ? '👑' : '⭐') : '👤';
+                        let roleText = data.role === 'admin' ? (data.is_super_admin ? 'Super Admin' : 'Administrateur') : 'Membre';
+                        let bgColor = data.is_super_admin ? '#f59e0b' : '#3b82f6';
+                        document.getElementById('userInfo').innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <div style="width: 36px; height: 36px; background: ${bgColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px;">
+                                    ${roleIcon}
+                                </div>
+                                <div class="text-start">
+                                    <div class="fw-bold">${data.nom}</div>
+                                    <small class="text-muted">${roleText}</small>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        function chargerStats() {
+            fetch('/api/dons/stats')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalDons').innerHTML = data.total_dons.toLocaleString() + ' FCFA';
+                    document.getElementById('totalLegs').innerHTML = data.total_legs.toLocaleString() + ' FCFA';
+                    document.getElementById('totalGeneral').innerHTML = data.total_general.toLocaleString() + ' FCFA';
+                    document.getElementById('nbDons').innerText = data.nombre_total;
+                })
+                .catch(err => console.error('Erreur stats:', err));
+        }
+        
+        function chargerDons() {
+            fetch('/api/dons/liste')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    if (data.length === 0) {
+                        html = `
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-2 d-block"></i>
+                                    <p class="text-muted">Aucun don enregistré</p>
+                                    <small>Utilisez le formulaire ci-dessus pour ajouter un don</small>
+                                
+                            </tr>
+                        `;
+                    } else {
+                        data.forEach((d, index) => {
+                            let typeIcon = d.type === 'don' ? '🎁' : (d.type === 'legs' ? '⚰️' : '🏛️');
+                            let typeClass = d.type === 'don' ? 'badge-don' : (d.type === 'legs' ? 'badge-legs' : 'badge-subvention');
+                            let typeLabel = d.type === 'don' ? 'DON' : (d.type === 'legs' ? 'LEGS' : 'SUBVENTION');
+                            
+                            html += `
+                                <tr style="animation: fadeInUp 0.3s ease-out ${index * 0.03}s forwards; opacity: 0;">
+                                    <td class="text-nowrap">
+                                        <i class="far fa-calendar-alt me-1 text-muted"></i>
+                                        ${new Date(d.date_don).toLocaleDateString('fr-FR')}
+                                    </td>
+                                    <td><strong>${d.donateur}</strong></td>
+                                    <td><span class="${typeClass}">${typeIcon} ${typeLabel}</span></td>
+                                    <td class="fw-bold text-success">${d.montant.toLocaleString()} FCFA</td>
+                                    <td>${d.motif || '<span class="text-muted">-</span>'}</td>
+                                    <td><i class="fas fa-user-check me-1 text-muted"></i>${d.enregistre_par || '-'}</td>
+                                    <td class="text-nowrap">
+                                        <button class="btn btn-sm btn-info btn-action" onclick="genererRecu(${d.id})" title="Reçu PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger btn-action" onclick="supprimerDon(${d.id})" title="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    document.getElementById('listeDons').innerHTML = html;
+                })
+                .catch(err => {
+                    console.error('Erreur chargement dons:', err);
+                    document.getElementById('listeDons').innerHTML = `
+                        <tr><td colspan="7" class="text-center py-4 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                            Erreur de chargement des données
+                        </td></tr>
+                    `;
+                });
+        }
+        
+        function showMessage(type, text) {
+            const icons = {
+                success: 'fa-check-circle',
+                danger: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = `
+                <div class="alert alert-${type} alert-custom">
+                    <i class="fas ${icons[type] || 'fa-info-circle'} me-2"></i>
+                    ${text}
+                </div>
+            `;
+            setTimeout(() => {
+                if (msgDiv.innerHTML.includes(text)) {
+                    msgDiv.innerHTML = '';
+                }
+            }, 5000);
+        }
+        
+        function enregistrerDon() {
+            let btn = document.getElementById('btnEnregistrer');
+            let data = {
+                donateur: document.getElementById('donateur').value.trim(),
+                type: document.getElementById('type').value,
+                montant: parseInt(document.getElementById('montant').value),
+                motif: document.getElementById('motif').value.trim()
+            };
+            
+            if(!data.donateur) {
+                showMessage('danger', '❌ Veuillez entrer le nom du donateur');
+                return;
+            }
+            if(!data.montant || isNaN(data.montant) || data.montant <= 0) {
+                showMessage('danger', '❌ Veuillez entrer un montant valide');
+                return;
+            }
+            
+            if(!confirm(`Confirmez-vous l'enregistrement de ${data.montant.toLocaleString()} FCFA pour ${data.donateur} ?`)) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+            
+            fetch('/api/dons/ajouter', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showMessage('success', '✅ ' + data.message);
+                    document.getElementById('donateur').value = '';
+                    document.getElementById('montant').value = '';
+                    document.getElementById('motif').value = '';
+                    chargerStats();
+                    chargerDons();
+                } else {
+                    showMessage('danger', '❌ ' + (data.message || 'Erreur lors de l\'enregistrement'));
+                }
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Enregistrer';
+            })
+            .catch(() => {
+                showMessage('danger', '❌ Erreur de connexion au serveur');
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Enregistrer';
+            });
+        }
+        
+        function genererRecu(id) {
+            fetch(`/api/dons/reçu/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        const element = document.createElement('div');
+                        element.style.padding = '40px';
+                        element.style.fontFamily = 'Inter, Arial, sans-serif';
+                        element.style.maxWidth = '600px';
+                        element.style.margin = '0 auto';
+                        element.style.background = 'white';
+                        element.style.borderRadius = '20px';
+                        element.innerHTML = `
+                            <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #6366f1; padding-bottom: 20px;">
+                                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                    <i class="fas fa-gift" style="color: white; font-size: 1.8rem;"></i>
+                                </div>
+                                <h2 style="color: #1e293b; margin: 10px 0 5px;">MediLogic-M_CNSS_DML</h2>
+                                <h3 style="color: #6366f1;">REÇU DE ${data.type.toUpperCase()}</h3>
+                                <p style="color: #64748b;">CNSS du Maritime Lacs</p>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                    <span><strong>🏢 Donateur :</strong></span>
+                                    <span>${data.donateur}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                    <span><strong>📅 Date :</strong></span>
+                                    <span>${new Date(data.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                    <span><strong>💰 Montant :</strong></span>
+                                    <span style="font-size: 1.3rem; color: #10b981; font-weight: bold;">${data.montant.toLocaleString()} FCFA</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                    <span><strong>📝 Motif :</strong></span>
+                                    <span>${data.motif || 'Sans motif'}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span><strong>🏷️ Type :</strong></span>
+                                    <span>${data.type === 'don' ? 'DON' : (data.type === 'legs' ? 'LEGS' : 'SUBVENTION')}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
+                                <p style="color: #10b981; font-weight: bold;">✓ Merci pour votre générosité !</p>
+                                <p style="color: #94a3b8; font-size: 12px;">MediLogic-M_CNSS_DML - Gestionnaire de mutuelle</p>
+                                <p style="color: #94a3b8; font-size: 12px;">Ce document fait office de reçu officiel</p>
+                            </div>
+                        `;
+                        html2pdf().from(element).set({
+                            margin: [0.5, 0.5, 0.5, 0.5],
+                            filename: `recu_${data.type}_${data.donateur.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2, letterRendering: true },
+                            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                        }).save();
+                    } else {
+                        showMessage('danger', '❌ Erreur lors de la génération du reçu');
+                    }
+                });
+        }
+        
+        function supprimerDon(id) {
+            if(confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce don ?\nCette action est irréversible.')) {
+                fetch(`/api/dons/supprimer/${id}`, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            showMessage('success', '✅ Don supprimé avec succès');
+                            chargerStats();
+                            chargerDons();
+                        } else {
+                            showMessage('danger', '❌ ' + data.message);
+                        }
+                    });
+            }
+        }
+        
+        function rafraichir() {
+            chargerStats();
+            chargerDons();
+            showMessage('info', '🔄 Données actualisées');
+        }
+        
+        function deconnexion() { 
+            fetch('/api/logout', {method: 'POST'}).then(() => window.location.href = '/login'); 
+        }
+        
+        // Support Enter key
+        document.getElementById('montant').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') enregistrerDon();
+        });
+        
+        // Initialisation
+        afficherUser();
+        chargerStats();
+        chargerDons();
+    </script>
+</body>
+</html>
